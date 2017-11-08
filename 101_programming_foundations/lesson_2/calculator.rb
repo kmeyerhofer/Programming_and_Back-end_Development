@@ -71,8 +71,7 @@ loop do # main loop
   loop do
     operator = gets.chomp
 
-    if
-      %w(1 2 3 4).include?(operator)
+    if %w(1 2 3 4).include?(operator)
       break
     else
       prompt("Must choose 1, 2, 3, or 4.")
@@ -83,13 +82,13 @@ loop do # main loop
 
   result = case operator
            when '1'
-             result = number1.to_i + number2.to_i
+             number1.to_i + number2.to_i
            when '2'
-             result = number1.to_i - number2.to_i
+             number1.to_i - number2.to_i
            when '3'
-             result = number1.to_i * number2.to_i
+             number1.to_i * number2.to_i
            when '4'
-             result = number1.to_f / number2.to_f
+             number1.to_f / number2.to_f
            end
 
   prompt("The Result is #{result}.")
