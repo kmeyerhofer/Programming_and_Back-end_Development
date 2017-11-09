@@ -48,13 +48,9 @@ loop do
   end
 end
 
-#m = monthly_payment
 a = loan_amount
 j = monthly_interest
 n = loan_duration
-
-
-#monthly_payment = loan_amount * (monthly_interest / (1 - (1 + monthly_interest)**-loan_duration))
 
 m = a * (j / (1 - (1 + j)**-n))
 monthly_payment_rounded = m.round(2)
