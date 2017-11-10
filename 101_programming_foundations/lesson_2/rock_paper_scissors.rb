@@ -1,4 +1,3 @@
-require 'pry'
 VALID_CHOICES = %w(rock paper scissors lizard spock)
 SHORTENED_CHOICES = %w(r p sc l sp)
 
@@ -55,6 +54,7 @@ loop do
   loop do
     prompt("Type one: #{VALID_CHOICES.join(', ')}.
     Or type #{SHORTENED_CHOICES.join(', ')}")
+    
     either_choice = gets.chomp.downcase
     if SHORTENED_CHOICES.include?(either_choice)
       choice = lengthener(either_choice)
