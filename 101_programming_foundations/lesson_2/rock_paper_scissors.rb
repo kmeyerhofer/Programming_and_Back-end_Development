@@ -17,8 +17,8 @@ def win?(first, second)
   win_hash[first].include?(second)
 end
 
-def display_at_five_wins(contender, player)
-  prompt("The Grand winner with #{contender} wins, is #{player}!")
+def display_at_five_wins(wins, player)
+  prompt("The Grand winner with #{wins} wins, is #{player}!")
 end
 
 def display_results(player, computer)
@@ -31,20 +31,29 @@ def display_results(player, computer)
   end
 end
 
-def end_game_sequence
-
-end
-require 'pry'
-
 player_counter = 0
 computer_counter = 0
 
-def point_counter(choice, computer_choice, player_counter, computer_counter)
-  binding.pry
+def return_points(choice, computer_choice, player_counter, computer_counter)
   if win?(choice, computer_choice)
     player_counter += 1
   elsif win?(computer_choice, choice)
     computer_counter += 1
+  else
+    return player_counter, computer_counter
+  end
+  return player_counter, computer_counter
+end
+
+def end_of_game_check(player_count, computer_count)
+  if player_count > 4
+    display_at_five_wins(player_count, 'You')
+    false
+  elsif computer_count > 4
+    display_at_five_wins(computer_count, 'Computer')
+    false
+  else
+    true
   end
 end
 
@@ -68,19 +77,16 @@ loop do
   computer_choice = VALID_CHOICES.values.sample
   prompt("You chose #{choice} and the computer chose #{computer_choice}")
   display_results(choice, computer_choice)
-  #binding.pry
-  point_counter(choice, computer_choice, player_counter, computer_counter)
 
-  if player_counter > 1
-    display_at_five_wins(player_counter, 'You')
-    break
-  elsif computer_counter > 1
-    display_at_five_wins(computer_counter, 'Computer')
-    break
-  end
+  player_counter, computer_counter = return_points(
+    choice, computer_choice, player_counter, computer_counter
+  )
+
+  break unless end_of_game_check(player_counter, computer_counter)
 
   prompt("Do you want to play again? (y/n)")
   answer = gets.chomp
   break unless answer.downcase.start_with?('y')
 end
+
 prompt("Thank you for playing. Goodbye!")
