@@ -31,8 +31,23 @@ def display_results(player, computer)
   end
 end
 
+def end_game_sequence
+
+end
+require 'pry'
+
 player_counter = 0
 computer_counter = 0
+
+def point_counter(choice, computer_choice, player_counter, computer_counter)
+  binding.pry
+  if win?(choice, computer_choice)
+    player_counter += 1
+  elsif win?(computer_choice, choice)
+    computer_counter += 1
+  end
+end
+
 loop do
   choice = ''
   loop do
@@ -53,13 +68,13 @@ loop do
   computer_choice = VALID_CHOICES.values.sample
   prompt("You chose #{choice} and the computer chose #{computer_choice}")
   display_results(choice, computer_choice)
+  #binding.pry
+  point_counter(choice, computer_choice, player_counter, computer_counter)
 
-  if win?(choice, computer_choice) then player_counter += 1 end
-  if win?(computer_choice, choice) then computer_counter += 1 end
-  if player_counter > 4
+  if player_counter > 1
     display_at_five_wins(player_counter, 'You')
     break
-  elsif computer_counter > 4
+  elsif computer_counter > 1
     display_at_five_wins(computer_counter, 'Computer')
     break
   end
