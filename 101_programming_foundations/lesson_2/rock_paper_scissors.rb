@@ -4,58 +4,36 @@ VALID_CHOICES = { 'r' => 'rock',
                   'l' => 'lizard',
                   'sp' => 'spock' }
 
+WIN_HASH = { 'scissors' => ['paper', 'lizard'],
+             'paper' => ['rock', 'spock'],
+             'rock' => ['lizard', 'scissors'],
+             'lizard' => ['spock', 'paper'],
+             'spock' => ['scissors', 'rock'] }
+
 def prompt(message)
   puts("=> #{message}")
 end
 
 def win?(first, second)
-  win_hash = { 'scissors' => ['paper', 'lizard'],
-               'paper' => ['rock', 'spock'],
-               'rock' => ['lizard', 'scissors'],
-               'lizard' => ['spock', 'paper'],
-               'spock' => ['scissors', 'rock'] }
-  win_hash[first].include?(second)
+  WIN_HASH[first].include?(second)
 end
 
 def display_at_five_wins(wins, player)
   prompt("The Grand winner with #{wins} wins, is #{player}!")
 end
 
-def display_results(player, computer)
+def display_results(player, computer, player_wins, computer_wins)
   if win?(player, computer)
-    prompt("You won!")
+    prompt("You won! Wins: #{player_wins}.")
   elsif win?(computer, player)
-    prompt("Computer won!")
+    prompt("Computer won! Wins: #{computer_wins}.")
   else
     prompt("It's a tie.")
   end
 end
 
-player_counter = 0
-computer_counter = 0
-
-def return_points(choice, computer_choice, player_counter, computer_counter)
-  if win?(choice, computer_choice)
-    player_counter += 1
-  elsif win?(computer_choice, choice)
-    computer_counter += 1
-  else
-    return player_counter, computer_counter
-  end
-  return player_counter, computer_counter
-end
-
-def end_of_game_check(player_count, computer_count)
-  if player_count > 4
-    display_at_five_wins(player_count, 'You')
-    false
-  elsif computer_count > 4
-    display_at_five_wins(computer_count, 'Computer')
-    false
-  else
-    true
-  end
-end
+player_wins = 0
+computer_wins = 0
 
 loop do
   choice = ''
@@ -76,15 +54,23 @@ loop do
 
   computer_choice = VALID_CHOICES.values.sample
   prompt("You chose #{choice} and the computer chose #{computer_choice}")
-  display_results(choice, computer_choice)
+  if win?(choice, computer_choice)
+    player_wins += 1
+  elsif win?(computer_choice, choice)
+    computer_wins += 1
+  end
+  display_results(choice, computer_choice, player_wins, computer_wins)
 
-  player_counter, computer_counter = return_points(
-    choice, computer_choice, player_counter, computer_counter
-  )
 
-  break unless end_of_game_check(player_counter, computer_counter)
+  if player_wins > 4
+    display_at_five_wins(player_wins, 'You')
+    break
+  elsif computer_wins > 4
+    display_at_five_wins(computer_wins, 'Computer')
+    break
+  end
 
-  prompt("Do you want to play again? (y/n)")
+  prompt("Do you want to play again? (y to continue, any value to exit)")
   answer = gets.chomp
   break unless answer.downcase.start_with?('y')
 end
