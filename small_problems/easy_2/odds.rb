@@ -1,1 +1,1 @@
-(0..99).select {|num| p num if num.odd? }
+(1..99).select {|num| p num if num.odd? }

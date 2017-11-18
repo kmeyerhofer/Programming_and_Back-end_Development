@@ -45,13 +45,16 @@ munsters = {
   "Marilyn" => { "age" => 23, "gender" => "female"}
 }
 
-munsters.each do |name, groups|
-  if groups["age"].between?(0,17)
-    groups["age_group"] = "kid"
-  elsif groups["age"].between?(18,64)
-    groups["age_group"] = "adult"
-  elsif groups["age"] > 64
-    groups["age_group"] = "senior"
+munsters.map do |name, groups|
+  if groups["age"] < 1
+
+    if groups["age"].between?(0,17)
+      groups["age_group"] = "kid"
+    elsif groups["age"].between?(18,64)
+      groups["age_group"] = "adult"
+    elsif groups["age"] > 64
+      groups["age_group"] = "senior"
+    end
   end
 end
 p munsters
