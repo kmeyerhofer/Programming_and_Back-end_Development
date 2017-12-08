@@ -1,11 +1,5 @@
 def multisum(num)
-  sum = 0
-  (1..num).each do |number|
-    if number % 3 == 0 || number % 5 == 0
-      sum += number
-    end
-  end
-  sum
+  (1..num).select { |number| (number % 3 == 0 || number % 5 == 0) }.inject(:+)
 end
 
 p multisum(3) == 3
