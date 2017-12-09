@@ -6,10 +6,10 @@ munsters = {
   "Marilyn" => { "age" => 23, "gender" => "female"}
 }
 
-male_age = 0
-munsters.each_pair do |name, value|
-  if value["gender"] == "male"
-    male_age += value["age"]
-  end
+def prompt(name, age, gender)
+  puts "#{name} is a #{age}-year-old #{gender}."
 end
-p male_age
+
+munsters.each_pair do |name, values|
+  prompt(name, values["age"], values["gender"])
+end
