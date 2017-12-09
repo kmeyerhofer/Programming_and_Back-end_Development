@@ -1,4 +1,3 @@
-require 'pry'
 munsters = {
   "Herman" => { "age" => 32, "gender" => "male" },
   "Lily" => { "age" => 30, "gender" => "female" },
