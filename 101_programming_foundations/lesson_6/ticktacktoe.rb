@@ -11,7 +11,6 @@ def prompt(message)
   puts "=> #{message}"
 end
 
-# rubocop:disable Metrics/MethodLength, Metrics/AbcSize
 def display_board(brd)
   system 'clear'
   puts "You're '#{PLAYER_MARKER}'. Computer '#{COMPUTER_MARKER}'."
@@ -29,12 +28,23 @@ def display_board(brd)
   puts '     |     |'
   puts ''
 end
-# rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
 def initialize_board
   new_board = {}
   (1..9).each { |num| new_board[num] = INITIAL_MARKER }
   new_board
+end
+
+def joiner(array, separator = ', ', last_word = 'or')
+  new_array = array
+  if new_array.count > 2
+    new_array.join(separator).insert(-2, "#{last_word} ")
+  elsif new_array.count == 2
+    new_array.join(' ').insert(-2, "#{last_word} ")
+  elsif new_array.count == 1
+    new_array[0]
+  end
+
 end
 
 def empty_squares(brd)
@@ -68,7 +78,7 @@ end
 def player_places_piece!(brd)
   square = ''
   loop do
-    prompt "Choose a square (#{empty_squares(brd).join(', ')}):"
+    prompt "Choose a square: #{joiner(empty_squares(brd))}"
     square = gets.chomp.to_i
     break if empty_squares(brd).include?(square)
     prompt 'Sorry, that\'s not a valid choice.'
