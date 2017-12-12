@@ -53,8 +53,20 @@ def empty_squares(brd)
 end
 
 def computer_places_piece!(brd)
-  square = empty_squares(brd).sample
-  brd[square] = COMPUTER_MARKER
+  available_options = WINNING_LINES.select do |line|
+    brd.values_at(*line).count(PLAYER_MARKER) == 2
+  end
+  if available_options.empty?
+    square = empty_squares(brd).sample
+    brd[square] = COMPUTER_MARKER
+  else
+    selection = available_options.map do |array|
+      array.select do |num|
+        empty_squares(brd).include?(num)
+      end
+    end
+    brd[selection.flatten.sample] = COMPUTER_MARKER
+  end
 end
 
 def board_full?(brd)
