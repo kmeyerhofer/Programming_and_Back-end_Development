@@ -11,9 +11,10 @@ def prompt(message)
   puts "=> #{message}"
 end
 
-def display_board(brd)
+def display_board(brd, player_wins = 0, computer_wins = 0)
   system 'clear'
   puts "You're '#{PLAYER_MARKER}'. Computer '#{COMPUTER_MARKER}'."
+  puts "Score (Best of 5) - Player: #{player_wins}, Computer: #{computer_wins}."
   puts ''
   puts '     |     |'
   puts "  #{brd[1]}  |  #{brd[2]}  |  #{brd[3]}"
@@ -87,11 +88,14 @@ def player_places_piece!(brd)
   brd[square] = PLAYER_MARKER
 end
 
+player_wins = 0
+computer_wins = 0
+
 loop do
   board = initialize_board
 
   loop do
-    display_board(board)
+    display_board(board, player_wins, computer_wins)
 
     player_places_piece!(board)
     break if someone_won?(board) || board_full?(board)
@@ -100,13 +104,22 @@ loop do
     break if someone_won?(board) || board_full?(board)
   end
 
-  display_board(board)
+  if detect_winner(board) == 'Player'
+    player_wins += 1
+  elsif detect_winner(board) == 'Computer'
+    computer_wins += 1
+  end
+
+  display_board(board, player_wins, computer_wins)
 
   if someone_won?(board)
     prompt "#{detect_winner(board)} wins!"
   else
     prompt "It's a tie!"
   end
+
+  break if player_wins == 5 || computer_wins == 5
+
   prompt 'Play again? (y or n)'
   answer = gets.chomp
   break unless answer.downcase.start_with?('y')
