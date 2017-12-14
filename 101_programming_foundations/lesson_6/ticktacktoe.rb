@@ -3,6 +3,7 @@ require 'pry'
 INITIAL_MARKER = ' '
 PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
+FIRST_MOVE = 'choose' # 'computer' or 'choose' are valid options too
 WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                 [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                 [[1, 5, 9], [3, 5, 7]] # diagnals
@@ -13,7 +14,7 @@ end
 
 def display_board(brd, player_wins = 0, computer_wins = 0)
   system 'clear'
-  puts "You're '#{PLAYER_MARKER}'. Computer '#{COMPUTER_MARKER}'."
+  puts "Player: '#{PLAYER_MARKER}'. Computer '#{COMPUTER_MARKER}'."
   puts "Score (Best of 5) - Player: #{player_wins}, Computer: #{computer_wins}."
   puts ''
   puts '     |     |'
@@ -45,27 +46,39 @@ def joiner(array, separator = ', ', last_word = 'or')
   elsif new_array.count == 1
     new_array[0]
   end
-
 end
 
 def empty_squares(brd)
   brd.keys.select { |num| brd[num] == INITIAL_MARKER }
 end
 
-def computer_places_piece!(brd)
-  available_options = WINNING_LINES.select do |line|
-    brd.values_at(*line).count(PLAYER_MARKER) == 2
+def find_at_risk_square(brd, marker)
+    WINNING_LINES.select do |line|
+      brd.values_at(*line).count(marker) == 2
+    end
+end
+
+def computer_selection_array(brd, available)
+  options = available.map do |array|
+    array.select do |num|
+      empty_squares(brd).include?(num)
+    end
   end
-  if available_options.empty?
+  options.flatten.sample
+end
+
+def computer_places_piece!(brd)
+  defensive_selection = computer_selection_array(brd, find_at_risk_square(brd, PLAYER_MARKER))
+  offensive_selection = computer_selection_array(brd, find_at_risk_square(brd, COMPUTER_MARKER))
+  if empty_squares(brd).include?(offensive_selection)
+    brd[offensive_selection] = COMPUTER_MARKER
+  elsif empty_squares(brd).include?(defensive_selection)
+    brd[defensive_selection] = COMPUTER_MARKER
+  elsif empty_squares(brd).include?(5)
+    brd[5] = COMPUTER_MARKER
+  else
     square = empty_squares(brd).sample
     brd[square] = COMPUTER_MARKER
-  else
-    selection = available_options.map do |array|
-      array.select do |num|
-        empty_squares(brd).include?(num)
-      end
-    end
-    brd[selection.flatten.sample] = COMPUTER_MARKER
   end
 end
 
@@ -100,20 +113,51 @@ def player_places_piece!(brd)
   brd[square] = PLAYER_MARKER
 end
 
+def both_player_selection(brd, first_move, player_wins, computer_wins)
+  case first_move
+  when 'player'
+    player_places_piece!(brd)
+    return true if someone_won?(brd) || board_full?(brd)
+    computer_places_piece!(brd)
+    return true if someone_won?(brd) || board_full?(brd)
+  when 'computer'
+    computer_places_piece!(brd)
+    display_board(brd, player_wins, computer_wins)
+    return true if someone_won?(brd) || board_full?(brd)
+    player_places_piece!(brd)
+    return true if someone_won?(brd) || board_full?(brd)
+  when 'choose'
+  end
+end
+
 player_wins = 0
 computer_wins = 0
+selection = ''
+
+def choice
+  case FIRST_MOVE
+  when 'player'
+    'player'
+  when 'computer'
+    'computer'
+  when 'choose'
+    selection = ''
+    loop do
+      prompt "Who should go first, Player or Computer?"
+      selection = gets.chomp.downcase
+      break if selection == 'player' || selection == 'computer'
+    end
+    selection
+  end
+end
 
 loop do
   board = initialize_board
+  selection = choice
 
   loop do
     display_board(board, player_wins, computer_wins)
-
-    player_places_piece!(board)
-    break if someone_won?(board) || board_full?(board)
-
-    computer_places_piece!(board)
-    break if someone_won?(board) || board_full?(board)
+    break if both_player_selection(board, selection, player_wins, computer_wins)
   end
 
   if detect_winner(board) == 'Player'
