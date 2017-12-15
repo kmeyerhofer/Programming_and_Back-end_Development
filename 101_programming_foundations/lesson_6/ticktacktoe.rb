@@ -3,7 +3,7 @@ require 'pry'
 INITIAL_MARKER = ' '
 PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
-FIRST_MOVE = 'choose' # 'computer' or 'choose' are valid options too
+FIRST_MOVE = 'choose' # valid options: 'player', 'computer', or 'choose'
 WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                 [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                 [[1, 5, 9], [3, 5, 7]] # diagnals
@@ -53,9 +53,9 @@ def empty_squares(brd)
 end
 
 def find_at_risk_square(brd, marker)
-    WINNING_LINES.select do |line|
-      brd.values_at(*line).count(marker) == 2
-    end
+  WINNING_LINES.select do |line|
+    brd.values_at(*line).count(marker) == 2
+  end
 end
 
 def computer_selection_array(brd, available)
@@ -113,26 +113,52 @@ def player_places_piece!(brd)
   brd[square] = PLAYER_MARKER
 end
 
-def both_player_selection(brd, first_move, player_wins, computer_wins)
-  case first_move
+def place_piece!(brd, current_player)
+  case current_player
   when 'player'
     player_places_piece!(brd)
-    return true if someone_won?(brd) || board_full?(brd)
-    computer_places_piece!(brd)
-    return true if someone_won?(brd) || board_full?(brd)
   when 'computer'
     computer_places_piece!(brd)
-    display_board(brd, player_wins, computer_wins)
-    return true if someone_won?(brd) || board_full?(brd)
-    player_places_piece!(brd)
-    return true if someone_won?(brd) || board_full?(brd)
-  when 'choose'
   end
 end
 
-player_wins = 0
-computer_wins = 0
-selection = ''
+def alternate_player(current_player)
+  case current_player
+  when 'player'
+    'computer'
+  when 'computer'
+    'player'
+  end
+end
+
+def selection_loops(brd, player_wins, computer_wins, current_player)
+  loop do
+      display_board(brd, player_wins, computer_wins)
+      place_piece!(brd, current_player)
+      current_player = alternate_player(current_player)
+      break if someone_won?(brd) || board_full?(brd)
+  end
+end
+
+def both_player_selection(brd, first_move, player_wins, computer_wins, current_player)
+  case first_move
+  when 'player'
+    selection_loops(brd, player_wins, computer_wins, current_player)
+  when 'computer'
+    selection_loops(brd, player_wins, computer_wins, current_player)
+  end
+end
+
+def choice_when_choose_selected
+  selection = ''
+  loop do
+    prompt 'Who should go first, Player or Computer?'
+    selection = gets.chomp.downcase
+    break if selection == 'player' || selection == 'computer'
+    prompt 'Sorry, that\'s not a valid choice.'
+  end
+  selection
+end
 
 def choice
   case FIRST_MOVE
@@ -141,24 +167,19 @@ def choice
   when 'computer'
     'computer'
   when 'choose'
-    selection = ''
-    loop do
-      prompt "Who should go first, Player or Computer?"
-      selection = gets.chomp.downcase
-      break if selection == 'player' || selection == 'computer'
-    end
-    selection
+    choice_when_choose_selected
   end
 end
+
+player_wins = 0
+computer_wins = 0
 
 loop do
   board = initialize_board
   selection = choice
 
-  loop do
-    display_board(board, player_wins, computer_wins)
-    break if both_player_selection(board, selection, player_wins, computer_wins)
-  end
+  display_board(board, player_wins, computer_wins)
+  both_player_selection(board, selection, player_wins, computer_wins, selection)
 
   if detect_winner(board) == 'Player'
     player_wins += 1
