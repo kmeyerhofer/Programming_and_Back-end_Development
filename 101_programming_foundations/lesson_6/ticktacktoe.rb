@@ -1,9 +1,9 @@
 require 'pry'
 
-INITIAL_MARKER = ' '
-PLAYER_MARKER = 'X'
-COMPUTER_MARKER = 'O'
-FIRST_MOVE = 'choose' # valid options: 'player', 'computer', or 'choose'
+INITIAL_MARKER = ' '.freeze
+PLAYER_MARKER = 'X'.freeze
+COMPUTER_MARKER = 'O'.freeze
+FIRST_MOVE = 'player'.freeze # valid options: 'player', 'computer', or 'choose'
 WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                 [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                 [[1, 5, 9], [3, 5, 7]] # diagnals
@@ -12,23 +12,27 @@ def prompt(message)
   puts "=> #{message}"
 end
 
-def display_board(brd, player_wins = 0, computer_wins = 0)
+def board_spaces
+  "     |     |\n" \
+    "-----+-----+-----\n" \
+    "     |     |\n"
+end
+
+def board_data(p_wins, c_wins)
   system 'clear'
-  puts "Player: '#{PLAYER_MARKER}'. Computer '#{COMPUTER_MARKER}'."
-  puts "Score (Best of 5) - Player: #{player_wins}, Computer: #{computer_wins}."
-  puts ''
+  puts "Player: '#{PLAYER_MARKER}'. Computer '#{COMPUTER_MARKER}'.\n"
+  puts "Score (Best of 5) - Player: #{p_wins}, Computer: #{c_wins}.\n\n"
+end
+
+def display_board(brd, player_wins = 0, computer_wins = 0)
+  board_data(player_wins, computer_wins)
   puts '     |     |'
   puts "  #{brd[1]}  |  #{brd[2]}  |  #{brd[3]}"
-  puts '     |     |'
-  puts '-----+-----+-----'
-  puts '     |     |'
+  print board_spaces
   puts "  #{brd[4]}  |  #{brd[5]}  |  #{brd[6]}"
-  puts '     |     |'
-  puts '-----+-----+-----'
-  puts '     |     |'
+  puts board_spaces
   puts "  #{brd[7]}  |  #{brd[8]}  |  #{brd[9]}"
-  puts '     |     |'
-  puts ''
+  puts "     |     |\n\n"
 end
 
 def initialize_board
@@ -67,13 +71,19 @@ def computer_selection_array(brd, available)
   options.flatten.sample
 end
 
+def offensive_selection(brd)
+  computer_selection_array(brd, find_at_risk_square(brd, COMPUTER_MARKER))
+end
+
+def defensive_selection(brd)
+  computer_selection_array(brd, find_at_risk_square(brd, PLAYER_MARKER))
+end
+
 def computer_places_piece!(brd)
-  defensive_selection = computer_selection_array(brd, find_at_risk_square(brd, PLAYER_MARKER))
-  offensive_selection = computer_selection_array(brd, find_at_risk_square(brd, COMPUTER_MARKER))
-  if empty_squares(brd).include?(offensive_selection)
-    brd[offensive_selection] = COMPUTER_MARKER
-  elsif empty_squares(brd).include?(defensive_selection)
-    brd[defensive_selection] = COMPUTER_MARKER
+  if empty_squares(brd).include?(offensive_selection(brd))
+    brd[offensive_selection(brd)] = COMPUTER_MARKER
+  elsif empty_squares(brd).include?(defensive_selection(brd))
+    brd[defensive_selection(brd)] = COMPUTER_MARKER
   elsif empty_squares(brd).include?(5)
     brd[5] = COMPUTER_MARKER
   else
@@ -88,17 +98,14 @@ end
 
 def detect_winner(brd)
   WINNING_LINES.each do |line|
-    if brd.values_at(*line).count(PLAYER_MARKER) == 3
-      return 'Player'
-    elsif brd.values_at(*line).count(COMPUTER_MARKER) == 3
-      return 'Computer'
-    end
+    return 'Player' if brd.values_at(*line).count(PLAYER_MARKER) == 3
+    return 'Computer' if brd.values_at(*line).count(COMPUTER_MARKER) == 3
   end
   nil
 end
 
 def someone_won?(brd)
-  !!detect_winner(brd)
+  !detect_winner(brd).nil?
 end
 
 def player_places_piece!(brd)
@@ -133,19 +140,19 @@ end
 
 def selection_loops(brd, player_wins, computer_wins, current_player)
   loop do
-      display_board(brd, player_wins, computer_wins)
-      place_piece!(brd, current_player)
-      current_player = alternate_player(current_player)
-      break if someone_won?(brd) || board_full?(brd)
+    display_board(brd, player_wins, computer_wins)
+    place_piece!(brd, current_player)
+    current_player = alternate_player(current_player)
+    break if someone_won?(brd) || board_full?(brd)
   end
 end
 
-def both_player_selection(brd, first_move, player_wins, computer_wins, current_player)
+def both_player_selection(brd, first_move, player_wins, computer_wins, player)
   case first_move
   when 'player'
-    selection_loops(brd, player_wins, computer_wins, current_player)
+    selection_loops(brd, player_wins, computer_wins, player)
   when 'computer'
-    selection_loops(brd, player_wins, computer_wins, current_player)
+    selection_loops(brd, player_wins, computer_wins, player)
   end
 end
 
