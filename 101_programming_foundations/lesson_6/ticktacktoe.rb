@@ -1,9 +1,7 @@
-require 'pry'
-
 INITIAL_MARKER = ' '.freeze
 PLAYER_MARKER = 'X'.freeze
 COMPUTER_MARKER = 'O'.freeze
-FIRST_MOVE = 'player'.freeze # valid options: 'player', 'computer', or 'choose'
+FIRST_MOVE = 'choose'.freeze # valid options: 'player', 'computer', or 'choose'
 WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                 [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                 [[1, 5, 9], [3, 5, 7]] # diagnals
@@ -12,10 +10,25 @@ def prompt(message)
   puts "=> #{message}"
 end
 
-def board_spaces
+def choice
+  case FIRST_MOVE
+  when 'player'
+    'player'
+  when 'computer'
+    'computer'
+  when 'choose'
+    choice_when_choose_selected
+  end
+end
+
+def board_filler
   "     |     |\n" \
     "-----+-----+-----\n" \
     "     |     |\n"
+end
+
+def board_hashes(brd, hash1, hash2, hash3)
+  puts "  #{brd[hash1]}  |  #{brd[hash2]}  |  #{brd[hash3]}"
 end
 
 def board_data(p_wins, c_wins)
@@ -27,11 +40,11 @@ end
 def display_board(brd, player_wins = 0, computer_wins = 0)
   board_data(player_wins, computer_wins)
   puts '     |     |'
-  puts "  #{brd[1]}  |  #{brd[2]}  |  #{brd[3]}"
-  print board_spaces
-  puts "  #{brd[4]}  |  #{brd[5]}  |  #{brd[6]}"
-  puts board_spaces
-  puts "  #{brd[7]}  |  #{brd[8]}  |  #{brd[9]}"
+  board_hashes(brd, 1, 2, 3)
+  puts board_filler
+  board_hashes(brd, 4, 5, 6)
+  puts board_filler
+  board_hashes(brd, 7, 8, 9)
   puts "     |     |\n\n"
 end
 
@@ -116,7 +129,6 @@ def player_places_piece!(brd)
     break if empty_squares(brd).include?(square)
     prompt 'Sorry, that\'s not a valid choice.'
   end
-
   brd[square] = PLAYER_MARKER
 end
 
@@ -147,7 +159,7 @@ def selection_loops(brd, player_wins, computer_wins, current_player)
   end
 end
 
-def both_player_selection(brd, first_move, player_wins, computer_wins, player)
+def player_selection(brd, first_move, player_wins, computer_wins, player)
   case first_move
   when 'player'
     selection_loops(brd, player_wins, computer_wins, player)
@@ -167,43 +179,26 @@ def choice_when_choose_selected
   selection
 end
 
-def choice
-  case FIRST_MOVE
-  when 'player'
-    'player'
-  when 'computer'
-    'computer'
-  when 'choose'
-    choice_when_choose_selected
-  end
-end
-
 player_wins = 0
 computer_wins = 0
 
 loop do
   board = initialize_board
-  selection = choice
-
+  selection = choice
   display_board(board, player_wins, computer_wins)
-  both_player_selection(board, selection, player_wins, computer_wins, selection)
-
+  player_selection(board, selection, player_wins, computer_wins, selection)
   if detect_winner(board) == 'Player'
     player_wins += 1
   elsif detect_winner(board) == 'Computer'
     computer_wins += 1
   end
-
   display_board(board, player_wins, computer_wins)
-
   if someone_won?(board)
     prompt "#{detect_winner(board)} wins!"
   else
     prompt "It's a tie!"
   end
-
   break if player_wins == 5 || computer_wins == 5
-
   prompt 'Play again? (y or n)'
   answer = gets.chomp
   break unless answer.downcase.start_with?('y')
