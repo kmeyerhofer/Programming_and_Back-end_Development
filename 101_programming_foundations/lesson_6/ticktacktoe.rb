@@ -69,7 +69,7 @@ def empty_squares(brd)
   brd.keys.select { |num| brd[num] == INITIAL_MARKER }
 end
 
-def find_at_risk_square(brd, marker)
+def find_two_in_a_row(brd, marker)
   WINNING_LINES.select do |line|
     brd.values_at(*line).count(marker) == 2
   end
@@ -85,11 +85,11 @@ def computer_selection_array(brd, available)
 end
 
 def offensive_selection(brd)
-  computer_selection_array(brd, find_at_risk_square(brd, COMPUTER_MARKER))
+  computer_selection_array(brd, find_two_in_a_row(brd, COMPUTER_MARKER))
 end
 
 def defensive_selection(brd)
-  computer_selection_array(brd, find_at_risk_square(brd, PLAYER_MARKER))
+  computer_selection_array(brd, find_two_in_a_row(brd, PLAYER_MARKER))
 end
 
 def computer_places_piece!(brd)
