@@ -1,3 +1,5 @@
+WINNING_VALUE = 21
+DEALER_STAY_VALUE = 17
 SUITS = {
   'hearts' => "\u2665 ",
   'diamonds' => "\u2666 ",
@@ -72,7 +74,7 @@ end
 def hand_total!(hand)
   total = hand.map { |array| array[2] }
   sum = total.inject(:+)
-  if total.include?(11) && sum > 21
+  if total.include?(11) && sum > WINNING_VALUE
     new_total = aces!(hand).map { |array| array[2] }
     sum = new_total.inject(:+)
   end
@@ -80,28 +82,33 @@ def hand_total!(hand)
 end
 
 def blackjack_check?(hand_totals)
-  hand_totals == 21 ? true : false
+  hand_totals == WINNING_VALUE ? true : false
 end
 
-def initial_board(player_hand, dealer_hand, message = '', winner = '')
+def initial_board(player_hand, dealer_hnd, message = '', winner = '', wins = [])
   player_total = hand_total!(player_hand)
-  prompt("Dealer's hand: #{display_card(dealer_hand[0])} and an unknown card.")
+  prompt("Dealer's hand: #{display_card(dealer_hnd[0])} and an unknown card.")
   prompt("Your hand: #{joiner(player_hand)} Total: #{player_total}.\n\n")
   prompt(message) unless message.empty?
-  win(winner) unless winner.empty?
+  win(winner, wins) unless winner.empty?
 end
 
-def update_board(player_hand, dealer_hand, message = '', winner = '')
+def update_board(player_hand, dealer_hand, message = '', winner = '', wins = [])
   player_total = hand_total!(player_hand)
   dealer_total = hand_total!(dealer_hand)
   prompt("Dealer's hand: #{joiner(dealer_hand)}. Total: #{dealer_total}")
   prompt("Your hand: #{joiner(player_hand)}. Total: #{player_total}\n\n")
   prompt(message) unless message.empty?
-  win(winner) unless winner.empty?
+  win(winner, wins) unless winner.empty?
 end
 
-def win(winner)
+def win(winner, wins)
   prompt("#{winner} wins!\n\n")
+  if winner == 'Player'
+    wins[0] += 1
+  elsif winner == 'Dealer'
+    wins[1] += 1
+  end
 end
 
 def push
@@ -125,56 +132,58 @@ def play_again?
   answer.downcase.start_with?('y') ? false : true
 end
 
-def player_hit(deck, player_hand, dealer_hand)
+def player_hit(deck, player_hand, dealer_hand, wins)
   player_hand = hit(deck, player_hand)
   player_total = hand_total!(player_hand)
-  initial_board(player_hand, dealer_hand) if player_total <= 21
-  if player_total > 21
-    initial_board(player_hand, dealer_hand, 'You Bust.', 'Dealer')
+  initial_board(player_hand, dealer_hand) if player_total <= WINNING_VALUE
+  if player_total > WINNING_VALUE
+    initial_board(player_hand, dealer_hand, 'You Bust.', 'Dealer', wins)
     true
-  elsif player_total == 21
-    dealer_turn(deck, player_hand, dealer_hand)
+  elsif player_total == WINNING_VALUE
+    dealer_turn(deck, player_hand, dealer_hand, wins)
     true
   end
 end
 
-def player_turn(deck, player_hand, dealer_hand)
+def player_turn(deck, player_hand, dealer_hand, wins)
   loop do
     answer = ask_hit_or_stay
     if answer == 'stay'
-      dealer_turn(deck, player_hand, dealer_hand)
+      dealer_turn(deck, player_hand, dealer_hand, wins)
       break
     elsif answer == 'hit'
-      break if player_hit(deck, player_hand, dealer_hand)
+      break if player_hit(deck, player_hand, dealer_hand, wins)
     end
   end
 end
 
-def calculate_winner(player_hand, dealer_hand, dealer_total)
+def calculate_winner(player_hand, dealer_hand, dealer_total, wins)
   player_total = hand_total!(player_hand)
   if dealer_total == player_total
     update_board(player_hand, dealer_hand, 'Push')
-  elsif dealer_total > 21
-    update_board(player_hand, dealer_hand, 'Dealer Bust.', 'Player')
+  elsif dealer_total > WINNING_VALUE
+    update_board(player_hand, dealer_hand, 'Dealer Bust.', 'Player', wins)
   elsif player_total > dealer_total
-    update_board(player_hand, dealer_hand, '', 'Player')
-  elsif player_total < dealer_total && dealer_total <= 21
-    update_board(player_hand, dealer_hand, '', 'Dealer')
+    update_board(player_hand, dealer_hand, '', 'Player', wins)
+  elsif player_total < dealer_total && dealer_total <= WINNING_VALUE
+    update_board(player_hand, dealer_hand, '', 'Dealer', wins)
   end
 end
 
-def dealer_turn(deck, player_hand, dealer_hand)
+def dealer_turn(deck, player_hand, dealer_hand, wins)
   loop do
     dealer_total = hand_total!(dealer_hand)
-    if dealer_total < 17
+    if dealer_total < DEALER_STAY_VALUE
       update_board(player_hand, dealer_hand)
       dealer_hand = hit(deck, dealer_hand)
     else
-      calculate_winner(player_hand, dealer_hand, dealer_total)
+      calculate_winner(player_hand, dealer_hand, dealer_total, wins)
       break
     end
   end
 end
+
+wins = [0, 0]
 
 loop do
   deck = initialize_deck
@@ -185,13 +194,17 @@ loop do
   initial_board(player_hand, dealer_hand)
 
   if blackjack_check?(player_total) && blackjack_check?(dealer_total)
-    update_board(player_hand, dealer_hand, 'Push')
+    update_board(player_hand, dealer_hand, 'Push', '')
   elsif blackjack_check?(player_total) && !blackjack_check?(dealer_total)
-    dealer_turn(deck, player_hand, dealer_hand)
+    dealer_turn(deck, player_hand, dealer_hand, wins)
   elsif !blackjack_check?(player_total) && blackjack_check?(dealer_total)
-    update_board(player_hand, dealer_hand, '', 'Dealer')
+    update_board(player_hand, dealer_hand, '', 'Dealer', wins)
   elsif !blackjack_check?(player_total) && !blackjack_check?(dealer_total)
-    player_turn(deck, player_hand, dealer_hand)
+    player_turn(deck, player_hand, dealer_hand, wins)
   end
+  prompt('Score (Best of 5)')
+  prompt("Player: #{wins[0]}.")
+  prompt("Dealer: #{wins[1]}.")
+  break if wins[0] == 5 || wins[1] == 5
   break if play_again?
 end
