@@ -86,14 +86,47 @@ def blackjack_check?(hand_totals)
   hand_totals == 21 ? true : false
 end
 
-def initial_board(player, dealer, player_total)
-  prompt("Dealer's hand: #{display_card(dealer[0])} and an unknown card.")
-  prompt("Your hand: #{joiner(player)} Total: #{player_total}.\n\n")
+# def display_cards(player, dealer)
+#   dealer_cards = dealer.map do |array|
+#     """Dealer cards
+#     __________
+#     |        |
+#     |#{array[1] == '10' ? array[1] + '  ' : array[1][0] + '   '}  #{SUITS[array[0]] + '|'}
+#     |        |
+#     |        |
+#     |#{SUITS[array[0]]}    #{array[1] == '10' ? array[1] + '|' : " " + array[1][0] + '|'}
+#     |________|
+#     """
+#   end
+#   dealer_cards.each { |card_art| puts card_art }
+# end
+
+# """__________
+# |        |
+# |5       |
+# |        |
+# |        |
+# |       5|
+# |________|
+# """
+
+def initial_board(player_hand, dealer_hand, message = '', winner = '')
+  player_total = hand_total!(player_hand)
+  prompt("Dealer's hand: #{display_card(dealer_hand[0])} and an unknown card.")
+  prompt("Your hand: #{joiner(player_hand)} Total: #{player_total}.\n\n")
+  prompt(message) unless message.empty?
+  win(winner) unless winner.empty?
+  # display_cards(player, dealer)
 end
 
-def update_board(player, dealer, player_total, dealer_total)
-  prompt("Dealer's hand: #{joiner(dealer)}. Total: #{dealer_total}")
-  prompt("Your hand: #{joiner(player)}. Total: #{player_total}\n\n")
+def update_board(player_hand, dealer_hand, message = '', winner = '')
+  player_total = hand_total!(player_hand)
+  dealer_total = hand_total!(dealer_hand)
+  prompt("Dealer's hand: #{joiner(dealer_hand)}. Total: #{dealer_total}")
+  prompt("Your hand: #{joiner(player_hand)}. Total: #{player_total}\n\n")
+  prompt(message) unless message.empty?
+  win(winner) unless winner.empty?
+  # display_cards(player, dealer)
 end
 
 def win(winner)
@@ -104,10 +137,66 @@ def push
   prompt("Push.\n\n")
 end
 
+def ask_hit_or_stay
+  prompt('Hit or stay?')
+  answer = gets.chomp.downcase
+  answer
+end
+
 def play_again?
   prompt("Play again? (Y or N)\n\n")
   answer = gets.chomp
   answer.downcase.start_with?('y') ? false : true
+end
+
+def player_hit(deck, player_hand, dealer_hand)
+  player_hand = hit(deck, player_hand)
+  player_total = hand_total!(player_hand)
+  initial_board(player_hand, dealer_hand) if player_total <= 21
+  if player_total > 21
+    initial_board(player_hand, dealer_hand, 'You Bust!', 'Dealer')
+    true
+  elsif player_total == 21
+    dealer_turn(deck, player_hand, dealer_hand)
+    true
+  end
+end
+
+def player_turn(deck, player_hand, dealer_hand)
+  loop do
+    answer = ask_hit_or_stay
+    if answer == 'stay'
+      break if dealer_turn(deck, player_hand, dealer_hand)
+    elsif answer == 'hit'
+      break if player_hit(deck, player_hand, dealer_hand)
+    else
+      prompt("That is an invalid choice, type 'Hit or 'Stay'.")
+    end
+  end
+end
+
+def dealer_turn(deck, player_hand, dealer_hand)
+  player_total = hand_total!(player_hand)
+  loop do
+    dealer_total = hand_total!(dealer_hand)
+    if dealer_total < 17
+      update_board(player_hand, dealer_hand)
+      dealer_hand = hit(deck, dealer_hand)
+    elsif dealer_total == player_total
+      update_board(player_hand, dealer_hand, 'Push')
+      break
+    elsif dealer_total > 21
+      update_board(player_hand, dealer_hand, 'Dealer Bust!', 'Player')
+      break
+    elsif player_total > dealer_total && dealer_total < 21
+      update_board(player_hand, dealer_hand, '', 'Player')
+      break
+    elsif player_total < dealer_total && dealer_total <= 21
+      update_board(player_hand, dealer_hand, '', 'Dealer')
+      break
+    end
+  end
+  true
 end
 
 loop do
@@ -116,110 +205,16 @@ loop do
   dealer_hand = initial_hand(deck)
   player_total = hand_total!(player_hand)
   dealer_total = hand_total!(dealer_hand)
-
-  initial_board(player_hand, dealer_hand, player_total)
+  initial_board(player_hand, dealer_hand)
 
   if blackjack_check?(player_total) && blackjack_check?(dealer_total)
-    update_board(player_hand, dealer_hand, player_total, dealer_total)
-    push
-    break unless play_again?
+    update_board(player_hand, dealer_hand, 'Push')
   elsif blackjack_check?(player_total) && !blackjack_check?(dealer_total)
-    loop do
-      dealer_total = hand_total!(dealer_hand)
-      if dealer_total < 17
-        update_board(player_hand, dealer_hand, player_total, dealer_total)
-        dealer_hand = hit(deck, dealer_hand)
-      elsif dealer_total == 21
-        update_board(player_hand, dealer_hand, player_total, dealer_total)
-        push
-        break
-      else
-        update_board(player_hand, dealer_hand, player_total, dealer_total)
-        win('Player')
-        break
-      end
-      break if dealer_total > 21
-    end
+    dealer_turn(deck, player_hand, dealer_hand)
   elsif !blackjack_check?(player_total) && blackjack_check?(dealer_total)
-    update_board(player_hand, dealer_hand, player_total, dealer_total)
-    win('Dealer')
+    update_board(player_hand, dealer_hand, '', 'Dealer')
   elsif !blackjack_check?(player_total) && !blackjack_check?(dealer_total)
-    loop do
-      prompt('Hit or stay?')
-      answer = gets.chomp.downcase
-      if answer == 'stay'
-        loop do
-          dealer_total = hand_total!(dealer_hand)
-          if dealer_total < 17
-            update_board(player_hand, dealer_hand, player_total, dealer_total)
-            dealer_hand = hit(deck, dealer_hand)
-          elsif dealer_total == player_total
-            update_board(player_hand, dealer_hand, player_total, dealer_total)
-            push
-            break
-          elsif dealer_total > 21
-            update_board(player_hand, dealer_hand, player_total, dealer_total)
-            prompt('Dealer Bust!')
-            win('Player')
-            break
-          elsif player_total > dealer_total && dealer_total < 21
-            update_board(player_hand, dealer_hand, player_total, dealer_total)
-            win('Player')
-            break
-          elsif player_total < dealer_total && dealer_total <= 21
-            update_board(player_hand, dealer_hand, player_total, dealer_total)
-            win('Dealer')
-            break
-          else # debugging
-            prompt("player_total: #{player_total}, dealer_total: #{dealer_total}")
-            break
-          end
-          break if dealer_total > 21
-        end
-        break
-      elsif answer == 'hit'
-        player_hand = hit(deck, player_hand)
-        player_total = hand_total!(player_hand)
-        initial_board(player_hand, dealer_hand, player_total)
-        if player_total > 21
-          prompt('You Bust!')
-          win('Dealer')
-          break
-        elsif player_total == 21
-          loop do
-            dealer_total = hand_total!(dealer_hand)
-            if dealer_total < 17
-              update_board(player_hand, dealer_hand, player_total, dealer_total)
-              dealer_hand = hit(deck, dealer_hand)
-            elsif dealer_total == 21
-              update_board(player_hand, dealer_hand, player_total, dealer_total)
-              push
-              break
-            elsif dealer_total > 21
-              update_board(player_hand, dealer_hand, player_total, dealer_total)
-              prompt('Dealer Bust!')
-              win('Player')
-              break
-            elsif player_total > dealer_total && dealer_total < 21
-              update_board(player_hand, dealer_hand, player_total, dealer_total)
-              win('Player')
-              break
-            elsif player_total < dealer_total && dealer_total <= 21
-              update_board(player_hand, dealer_hand, player_total, dealer_total)
-              win('Dealer')
-              break
-            else # debugging
-              prompt("player_total: #{player_total}, dealer_total: #{dealer_total}")
-              break
-            end
-            break if dealer_total > 21
-          end
-          break
-        end
-      else
-        prompt("That is an invalid choice, type 'Hit or 'Stay'.")
-      end
-    end
+    player_turn(deck, player_hand, dealer_hand)
   end
   break if play_again?
 end
