@@ -53,56 +53,64 @@ end
 
 def joiner(hand)
   new_array = hand.map { |array| display_card(array) }
-  array = new_array.insert(-2, "and").join(', ')
+  array = new_array.insert(-2, 'and').join(', ')
   array
 end
 
-def hand_total(hand)
-  total = hand.map { |array| array[2] }
-  sum = total.inject(:+)
+def hit(deck, hand)
+  card = deal_cards(deck, 1).flatten
+  new_hand = hand << card
+  new_hand
 end
 
-def dealer_turn(hand)
+def aces!(hand)
+  hand.find do |array|
+    if array.include?('Ace') && array[2] != 1
+      array[2] = 1
+    end
+  end
+  hand
+end
 
+def hand_total!(hand)
+  total = hand.map { |array| array[2] }
+  sum = total.inject(:+)
+  if total.include?(11) && sum > 21
+    new_total = aces!(hand).map { |array| array[2] }
+    sum = new_total.inject(:+)
+    #binding.pry
+  end
+  sum
 end
 
 def blackjack(player_hand, dealer_hand)
-  if hand_total(player_hand) == 21 && hand_total(dealer_hand) == 21
-    "Push"
-  elsif hand_total(player_hand) == 21 && hand_total(dealer_hand) != 21
-    "Player"
-  elsif hand_total(player_hand) != 21 && hand_total(dealer_hand) == 21
-    "Dealer"
+  if hand_total!(player_hand) == 21 && hand_total!(dealer_hand) == 21
+    'Push'
+  elsif hand_total!(player_hand) == 21 && hand_total!(dealer_hand) != 21
+    'Player'
+  elsif hand_total!(player_hand) != 21 && hand_total!(dealer_hand) == 21
+    'Dealer'
   end
 end
 
-def hand_count_check(hand)
-  case
-  when hand_total(hand) > 21
-    true
-  when hand_total(hand) < 21
-    false
-  # when =< 17
-  #   true
-when hand_total(hand) == 21
-    #blackjack
-  end
+def blackjack_check?(hand_totals)
+  hand_totals == 21 ? true : false
 end
 
 def hit_or_stay(deck, player_hand, dealer_hand)
   loop do
-    prompt("Hit or stay?")
+    prompt('Hit or stay?')
     answer= gets.chomp.downcase
     if answer == 'stay'
-      update_board(deck, player_hand, dealer_hand)
+      update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
       dealer_turn(dealer_hand)
       break
     elsif answer == 'hit'
-      new_player_hand = player_hit(deck, player_hand)
+      new_player_hand = hit(deck, player_hand)
       initial_board(deck, new_player_hand, dealer_hand)
       break if hand_count_check(new_player_hand)
-      prompt("Bust!")
-      update_board(deck, new_player_hand, dealer_hand)
+      prompt('Bust!')
+      update_board(deck, new_player_hand, dealer_hand, player_total, dealer_total)
       #break
     else
       prompt("That is an invalid selection, type 'Hit' or 'Stay'.")
@@ -112,39 +120,73 @@ end
 
 def initial_board(deck, player, dealer)
   prompt("Dealer's hand: #{display_card(dealer[0])} and an unknown card.")
-  prompt("Your hand: #{joiner(player)}.")
+  prompt("Your hand: #{joiner(player)}.\n\n")
 end
 
-def update_board(deck, player, dealer)
-  prompt("Dealer's hand: #{joiner(dealer)}.")
-  prompt("Your hand: #{joiner(player)}.")
+def update_board(deck, player, dealer, player_total, dealer_total)
+  prompt("Dealer's hand: #{joiner(dealer)}. Total: #{dealer_total}")
+  prompt("Your hand: #{joiner(player)}. Total: #{player_total}\n\n")
 end
 
-def player_hit(deck, player_hand)
-  hand = deal_cards(deck, 1).flatten
-  new_player_hand = player_hand << hand
-  new_player_hand
+def win(winner)
+  prompt("#{winner} wins!\n\n")
 end
 
-# def initialize_game
-#   deck = intitalize_deck
-#   player_hand = initial_hand(deck)
-#   dealer_hand = initial_hand(deck)
-#   initial_board(deck, player_hand, dealer_hand)
-# end
+def push
+  prompt("Dealer and Player have Blackjack. Push.\n\n")
+end
+
+def play_again?
+  # loop do
+    prompt('Play again? (Y or N)')
+    answer = gets.chomp
+    answer.downcase.start_with?('y') ? false : true
+  # end
+  # true
+end
+
+def initial_blackjack_checks
+end
 
 loop do
   deck = initialize_deck
-  player_hand = initial_hand(deck)
-  dealer_hand = initial_hand(deck)
-
-  player_total = hand_total(player_hand)
-  dealer_total = hand_total(dealer_hand)
+  player_hand = initial_hand(deck) # [['spades', 'Ace', 11], ['hearts', 'King', 10]]
+  dealer_hand = initial_hand(deck) # [['hearts', 'Ace', 11], ['spades', '4', 4], ['diamonds', 'Ace', 11]]
+  player_total = hand_total!(player_hand)
+  dealer_total = hand_total!(dealer_hand)
 
   initial_board(deck, player_hand, dealer_hand)
+  #binding.pry
+  if blackjack_check?(player_total) && blackjack_check?(dealer_total)
+    update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+    push
+    break unless play_again?
+  elsif blackjack_check?(player_total) && !(blackjack_check?(dealer_total))
+    #binding.pry
+    loop do
+      dealer_total = hand_total!(dealer_hand)
+      #binding.pry
+      if dealer_total < 17
+        update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+        dealer_hand = hit(deck, dealer_hand)
+      elsif dealer_total == 21
+        update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+        push
+        break # unless play_again?
+      else
+        update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+        win('Player')
+        break
+      end
+      break if dealer_total > 21
+    end
+  elsif !(blackjack_check?(player_total)) && blackjack_check?(dealer_total)
+    update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+    win('Dealer')
+    break unless play_again?
 
-
-
+  end
+  break if play_again?
 end
 
-  hand_total(player_hand) == 21 ? update_board(deck, player_hand, dealer_hand) : hit_or_stay(deck, player_hand, dealer_hand)
+# hand_total!(player_hand) == 21 ? update_board(deck, player_hand, dealer_hand) : hit_or_stay(deck, player_hand, dealer_hand)
