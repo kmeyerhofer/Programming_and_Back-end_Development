@@ -74,6 +74,7 @@ end
 
 def hand_total!(hand)
   total = hand.map { |array| array[2] }
+  #binding.pry
   sum = total.inject(:+)
   if total.include?(11) && sum > 21
     new_total = aces!(hand).map { |array| array[2] }
@@ -97,7 +98,7 @@ def blackjack_check?(hand_totals)
   hand_totals == 21 ? true : false
 end
 
-def hit_or_stay(deck, player_hand, dealer_hand)
+def hit_or_stay(deck, player_hand, dealer_hand, player_total, dealer_total)
   loop do
     prompt('Hit or stay?')
     answer= gets.chomp.downcase
@@ -118,9 +119,9 @@ def hit_or_stay(deck, player_hand, dealer_hand)
   end
 end
 
-def initial_board(deck, player, dealer)
+def initial_board(deck, player, dealer, player_total, dealer_total)
   prompt("Dealer's hand: #{display_card(dealer[0])} and an unknown card.")
-  prompt("Your hand: #{joiner(player)}.\n\n")
+  prompt("Your hand: #{joiner(player)} Total: #{player_total}.\n\n")
 end
 
 def update_board(deck, player, dealer, player_total, dealer_total)
@@ -133,12 +134,12 @@ def win(winner)
 end
 
 def push
-  prompt("Dealer and Player have Blackjack. Push.\n\n")
+  prompt("Push.\n\n")
 end
 
 def play_again?
   # loop do
-    prompt('Play again? (Y or N)')
+    prompt("Play again? (Y or N)\n\n")
     answer = gets.chomp
     answer.downcase.start_with?('y') ? false : true
   # end
@@ -155,17 +156,15 @@ loop do
   player_total = hand_total!(player_hand)
   dealer_total = hand_total!(dealer_hand)
 
-  initial_board(deck, player_hand, dealer_hand)
-  #binding.pry
+  initial_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+
   if blackjack_check?(player_total) && blackjack_check?(dealer_total)
     update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
     push
     break unless play_again?
   elsif blackjack_check?(player_total) && !(blackjack_check?(dealer_total))
-    #binding.pry
     loop do
       dealer_total = hand_total!(dealer_hand)
-      #binding.pry
       if dealer_total < 17
         update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
         dealer_hand = hit(deck, dealer_hand)
@@ -183,8 +182,86 @@ loop do
   elsif !(blackjack_check?(player_total)) && blackjack_check?(dealer_total)
     update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
     win('Dealer')
-    break unless play_again?
-
+  elsif !(blackjack_check?(player_total)) && !(blackjack_check?(dealer_total))
+    # hit_or_stay(deck, player_hand, dealer_hand, player_total, dealer_total)
+    loop do
+      prompt('Hit or stay?')
+      answer = gets.chomp.downcase
+      if answer == 'stay'
+        loop do
+          dealer_total = hand_total!(dealer_hand)
+          #binding.pry
+          if dealer_total < 17
+            update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+            dealer_hand = hit(deck, dealer_hand)
+          elsif dealer_total == player_total
+            update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+            push
+            break
+          elsif dealer_total > 21
+            update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+            prompt('Dealer Bust!')
+            win('Player')
+            break
+          elsif player_total > dealer_total && dealer_total < 21
+            update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+            win('Player')
+            break
+          elsif player_total < dealer_total && dealer_total <= 21
+            update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+            win('Dealer')
+            break
+          else # debugging
+            prompt("player_total: #{player_total}, dealer_total: #{dealer_total}")
+            break
+          end
+          break if dealer_total > 21
+        end
+        break
+      elsif answer == 'hit'
+        player_hand = hit(deck, player_hand)
+        player_total = hand_total!(player_hand)
+        initial_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+        if player_total > 21
+          prompt('You Bust!')
+          win('Dealer')
+          break
+        elsif player_total == 21
+          loop do
+            #binding.pry
+            dealer_total = hand_total!(dealer_hand)
+            if dealer_total < 17
+              update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+              dealer_hand = hit(deck, dealer_hand)
+            elsif dealer_total == 21
+              update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+              push
+              break
+            elsif dealer_total > 21
+              update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+              prompt('Dealer Bust!')
+              win('Player')
+              break
+            elsif player_total > dealer_total && dealer_total < 21
+              update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+              win('Player')
+              break
+            elsif player_total < dealer_total && dealer_total <= 21
+              update_board(deck, player_hand, dealer_hand, player_total, dealer_total)
+              win('Dealer')
+              break
+            else # debugging
+              prompt("player_total: #{player_total}, dealer_total: #{dealer_total}")
+              break
+            end
+            break if dealer_total > 21
+          end
+          break
+        end
+      else
+        prompt("That is an invalid choice, type 'Hit or 'Stay'.")
+      end
+    end
   end
   break if play_again?
 end
