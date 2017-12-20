@@ -1,4 +1,3 @@
-require 'pry'
 SUITS = {
   'hearts' => "\u2665 ",
   'diamonds' => "\u2666 ",
@@ -65,9 +64,7 @@ end
 
 def aces!(hand)
   hand.find do |array|
-    if array.include?('Ace') && array[2] != 1
-      array[2] = 1
-    end
+    array[2] = 1 if array.include?('Ace') && array[2] != 1
   end
   hand
 end
@@ -86,37 +83,12 @@ def blackjack_check?(hand_totals)
   hand_totals == 21 ? true : false
 end
 
-# def display_cards(player, dealer)
-#   dealer_cards = dealer.map do |array|
-#     """Dealer cards
-#     __________
-#     |        |
-#     |#{array[1] == '10' ? array[1] + '  ' : array[1][0] + '   '}  #{SUITS[array[0]] + '|'}
-#     |        |
-#     |        |
-#     |#{SUITS[array[0]]}    #{array[1] == '10' ? array[1] + '|' : " " + array[1][0] + '|'}
-#     |________|
-#     """
-#   end
-#   dealer_cards.each { |card_art| puts card_art }
-# end
-
-# """__________
-# |        |
-# |5       |
-# |        |
-# |        |
-# |       5|
-# |________|
-# """
-
 def initial_board(player_hand, dealer_hand, message = '', winner = '')
   player_total = hand_total!(player_hand)
   prompt("Dealer's hand: #{display_card(dealer_hand[0])} and an unknown card.")
   prompt("Your hand: #{joiner(player_hand)} Total: #{player_total}.\n\n")
   prompt(message) unless message.empty?
   win(winner) unless winner.empty?
-  # display_cards(player, dealer)
 end
 
 def update_board(player_hand, dealer_hand, message = '', winner = '')
@@ -126,7 +98,6 @@ def update_board(player_hand, dealer_hand, message = '', winner = '')
   prompt("Your hand: #{joiner(player_hand)}. Total: #{player_total}\n\n")
   prompt(message) unless message.empty?
   win(winner) unless winner.empty?
-  # display_cards(player, dealer)
 end
 
 def win(winner)
@@ -138,8 +109,13 @@ def push
 end
 
 def ask_hit_or_stay
-  prompt('Hit or stay?')
-  answer = gets.chomp.downcase
+  answer = ''
+  loop do
+    prompt('Hit or stay?')
+    answer = gets.chomp.downcase
+    break if answer == 'stay' || answer == 'hit'
+    prompt("That is an invalid choice, type 'Hit or 'Stay'.")
+  end
   answer
 end
 
@@ -154,7 +130,7 @@ def player_hit(deck, player_hand, dealer_hand)
   player_total = hand_total!(player_hand)
   initial_board(player_hand, dealer_hand) if player_total <= 21
   if player_total > 21
-    initial_board(player_hand, dealer_hand, 'You Bust!', 'Dealer')
+    initial_board(player_hand, dealer_hand, 'You Bust.', 'Dealer')
     true
   elsif player_total == 21
     dealer_turn(deck, player_hand, dealer_hand)
@@ -166,37 +142,38 @@ def player_turn(deck, player_hand, dealer_hand)
   loop do
     answer = ask_hit_or_stay
     if answer == 'stay'
-      break if dealer_turn(deck, player_hand, dealer_hand)
+      dealer_turn(deck, player_hand, dealer_hand)
+      break
     elsif answer == 'hit'
       break if player_hit(deck, player_hand, dealer_hand)
-    else
-      prompt("That is an invalid choice, type 'Hit or 'Stay'.")
     end
   end
 end
 
-def dealer_turn(deck, player_hand, dealer_hand)
+def calculate_winner(player_hand, dealer_hand, dealer_total)
   player_total = hand_total!(player_hand)
+  if dealer_total == player_total
+    update_board(player_hand, dealer_hand, 'Push')
+  elsif dealer_total > 21
+    update_board(player_hand, dealer_hand, 'Dealer Bust.', 'Player')
+  elsif player_total > dealer_total
+    update_board(player_hand, dealer_hand, '', 'Player')
+  elsif player_total < dealer_total && dealer_total <= 21
+    update_board(player_hand, dealer_hand, '', 'Dealer')
+  end
+end
+
+def dealer_turn(deck, player_hand, dealer_hand)
   loop do
     dealer_total = hand_total!(dealer_hand)
     if dealer_total < 17
       update_board(player_hand, dealer_hand)
       dealer_hand = hit(deck, dealer_hand)
-    elsif dealer_total == player_total
-      update_board(player_hand, dealer_hand, 'Push')
-      break
-    elsif dealer_total > 21
-      update_board(player_hand, dealer_hand, 'Dealer Bust!', 'Player')
-      break
-    elsif player_total > dealer_total && dealer_total < 21
-      update_board(player_hand, dealer_hand, '', 'Player')
-      break
-    elsif player_total < dealer_total && dealer_total <= 21
-      update_board(player_hand, dealer_hand, '', 'Dealer')
+    else
+      calculate_winner(player_hand, dealer_hand, dealer_total)
       break
     end
   end
-  true
 end
 
 loop do
