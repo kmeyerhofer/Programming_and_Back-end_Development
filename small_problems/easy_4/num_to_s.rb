@@ -3,7 +3,7 @@ def integer_to_string(num)
   num_array.map do |digit|
     int_hash(digit)
   end
-  num_array.join
+  num_array
 end
 
 def int_hash(key)
@@ -13,6 +13,18 @@ def int_hash(key)
   }.fetch(key, 'No digit')
 end
 
-p integer_to_string(4321)
-p integer_to_string(0)
-p integer_to_string(5000)
+def signed_integer_to_string(num)
+  if num > 0
+    integer_to_string(num).unshift("+").join
+  elsif num < 0
+    abs_num = num.abs
+    integer_to_string(abs_num).unshift("-").join
+  else
+    integer_to_string(num).join
+  end
+end
+
+p signed_integer_to_string(4321)
+p signed_integer_to_string(0)
+p signed_integer_to_string(5000)
+p signed_integer_to_string(-123)
