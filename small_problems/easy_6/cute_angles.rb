@@ -1,10 +1,14 @@
 DEGREE = "\xC2\xB0"
+MINUTES_PER_DEGREE = 60
+SECONDS_PER_MINUTE = 60
+SECONDS_PER_DEGREE = MINUTES_PER_DEGREE * SECONDS_PER_MINUTE
+
 
 def dms(float)
-  second_value = (float % 1 * 60 % 1 * 60)
-  minute_value = ((float % 1 * 60) - (float % 1 * 60 % 1))
-  degree_value = (float.to_i / 1)
-  "#{degree_value}#{DEGREE}#{sprintf("%02d", minute_value)}'#{sprintf("%02d", second_value)}\""
+  total_seconds = (float * SECONDS_PER_DEGREE).round
+  degrees, remaining_seconds = total_seconds.divmod(SECONDS_PER_DEGREE)
+  minutes, seconds = remaining_seconds.divmod(SECONDS_PER_MINUTE)
+  format(%(#{degrees}#{DEGREE}%02d'%02d"), minutes, seconds)
 end
 
 
