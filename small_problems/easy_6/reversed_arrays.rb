@@ -1,12 +1,13 @@
 def reverse!(array)
   length = array.length - 1
-  index = 0
-  length.times do |_|
-    array.insert(index, array.pop)
-    index +=1
+  length.times do |num|
+    array.insert(num, array.pop)
   end
   array
 end
+
+# array[left_index], array[right_index] = array[right_index], array[left_index]
+# useful parallel assignment
 
 p list = [1,2,3,4]
 p result = reverse!(list) # => [4,3,2,1]
