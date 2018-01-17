@@ -1,9 +1,7 @@
 def bubble_sort!(array)
-  array_count = array.count
-  counter = 0
   loop do
     swapped = false
-    (array_count - 1).times do |index|
+    (array.count - 1).times do |index|
       next if (array[index] <=> array[index + 1]) == -1
       array[index], array[index + 1] = array[index + 1], array[index]
       swapped = true
