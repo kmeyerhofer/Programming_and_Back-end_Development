@@ -1,13 +1,11 @@
 def madlibs(file)
-  madlib_data = file_to_hash(file)
   puts """
-  The #{random_value('adjective', madlib_data)} #{random_value('adjective', madlib_data)} #{random_value('noun', madlib_data)} #{random_value('adverb', madlib_data)}
-  #{random_value('verb', madlib_data)} the #{random_value('adjective', madlib_data)} #{random_value('adjective', madlib_data)} #{random_value('noun', madlib_data)}, who #{random_value('adverb', madlib_data)}
-  #{random_value('verb', madlib_data)} the #{random_value('noun', madlib_data)} and #{random_value('verb', madlib_data)} around.
+  The #{ADJECTIVES.sample} #{ADJECTIVES.sample} #{NOUNS.sample} #{ADVERBS.sample}
+  #{VERBS.sample} the #{ADJECTIVES.sample} #{ADJECTIVES.sample} #{NOUNS.sample}, who #{ADVERBS.sample}
+  #{VERBS.sample} the #{NOUNS.sample} and #{VERBS.sample} around.
   """
-
 end
-require 'pry'
+
 def file_to_hash(file)
   words = File.read(file)
   split_words = words.split("\n")
@@ -21,11 +19,11 @@ def file_to_hash(file)
   madlib_hash
 end
 
-def random_value(word_type, hash)
-  #binding.pry
-  hash[word_type].sample
-end
-
-
 file = File.new("madlibs.txt", "r+")
+
+ADJECTIVES = file_to_hash(file)['adjectives'].freeze
+ADVERBS = file_to_hash(file)['adverbs'].freeze
+NOUNS = file_to_hash(file)['nouns'].freeze
+VERBS = file_to_hash(file)['verbs'].freeze
+
 madlibs(file)
