@@ -1,7 +1,21 @@
-class Cat
-  def initialize
-    puts "I'm a cat!"
+module Walkable
+  def walk
+    puts "Let's go for a walk."
   end
 end
 
-kitty = Cat.new
+class Cat
+  include Walkable
+  attr_accessor :name
+  def initialize(name)
+    @name = name
+  end
+
+  def greet
+    "Hello! My name is #{name}"
+  end
+end
+
+kitty = Cat.new('Sophie')
+p kitty.greet
+kitty.walk
