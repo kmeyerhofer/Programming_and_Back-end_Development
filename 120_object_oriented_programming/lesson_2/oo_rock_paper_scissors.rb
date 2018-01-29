@@ -1,62 +1,65 @@
 require 'pry'
 class Move
+  attr_accessor :value
   VALUES = %w[rock paper scissors lizard spock]
 
   def initialize(value)
     @value = value if VALUES.include?(value)
   end
 
-  def scissors?
-    @value == 'scissors'
-  end
-
-  def rock?
-    @value == 'rock'
-  end
-
-  def paper?
-    @value == 'paper'
-  end
-
-  def lizard?
-    @value == 'lizard'
-  end
-
-  def spock?
-    @value == 'spock'
-  end
-
-  def >(other_move)
-    (scissors? && (other_move.paper? || other_move.lizard?)) ||
-      (paper? && (other_move.rock? || other_move.spock?)) ||
-      (rock? && (other_move.lizard? || other_move.scissors?)) ||
-      (lizard? && (other_move.spock? || other_move.paper?)) ||
-      (spock? && (other_move.scissors? || other_move.rock?))
-  end
-
-  def <(other_move)
-    (rock? && (other_move.paper? || other_move.spock?)) ||
-      (paper? && (other_move.scissors? || other_move.lizard?)) ||
-      (scissors? && (other_move.rock? || other_move.spock?)) ||
-      (lizard? && (other_move.rock? || other_move.scissors?)) ||
-      (spock? && (other_move.paper? || other_move.lizard?))
-  end
-
   def to_s
-    @value
+    value
+  end
+end
+
+class Rock < Move
+  def win?(other_move)
+    value && (other_move.value == 'lizard' || other_move.value == 'scissors')
+  end
+end
+
+class Paper < Move
+  def win?(other_move)
+    value && (other_move.value == 'rock' || other_move.value == 'spock')
+  end
+end
+
+class Scissors < Move
+  def win?(other_move)
+    value && (other_move.value == 'paper' || other_move.value == 'lizard')
+  end
+end
+
+class Lizard < Move
+  def win?(other_move)
+    value && (other_move.value == 'spock' || other_move.value == 'paper')
+  end
+end
+
+class Spock < Move
+  def win?(other_move)
+    value && (other_move.value == 'scissors' || other_move.value == 'rock')
   end
 end
 
 class Score
-  attr_accessor :wins, :max_wins
+  attr_accessor :wins
+  @@max_wins = 0
 
-  def initialize(max_wins)
-    @max_wins = max_wins
+  def initialize
     @wins = 0
   end
 
+  def self.start_max_wins(value)
+    @@max_wins = value
+  end
+
+  def self.max_wins
+    @@max_wins
+  end
+
   def win?
-    wins >= max_wins
+    wins >= @@max_wins
   end
 
   def to_s
@@ -69,7 +72,7 @@ class Player
 
   def initialize
     set_name
-    self.score = Score.new(10)
+    self.score = Score.new
   end
 end
 
@@ -79,7 +82,7 @@ class Human < Player
     loop do
       puts "What's your name?"
       n = gets.chomp
-      break unless n.empty?
+      break unless n.start_with?(' ') || n.empty?
       puts "Sorry, must enter a value."
     end
     self.name = n
@@ -93,7 +96,22 @@ class Human < Player
       break if Move::VALUES.include?(choice)
       puts "Sorry, invalid choice."
     end
-    self.move = Move.new(choice)
+    move_choice(choice)
+  end
+
+  def move_choice(choice)
+    case choice
+    when 'rock'
+      self.move = Rock.new(choice)
+    when 'paper'
+      self.move = Paper.new(choice)
+    when 'scissors'
+      self.move = Scissors.new(choice)
+    when 'lizard'
+      self.move = Lizard.new(choice)
+    when 'spock'
+      self.move = Spock.new(choice)
+    end
   end
 end
 
@@ -103,7 +121,19 @@ class Computer < Player
   end
 
   def choose
-    self.move = Move.new(Move::VALUES.sample)
+    choice = Move::VALUES.sample
+    case choice
+    when 'rock'
+      self.move = Rock.new(choice)
+    when 'paper'
+      self.move = Paper.new(choice)
+    when 'scissors'
+      self.move = Scissors.new(choice)
+    when 'lizard'
+      self.move = Lizard.new(choice)
+    when 'spock'
+      self.move = Spock.new(choice)
+    end
   end
 end
 
@@ -113,6 +143,7 @@ class RPSGame
   def initialize
     @human = Human.new
     @computer = Computer.new
+    Score.start_max_wins(3)
   end
 
   def play_again?
@@ -147,15 +178,15 @@ class RPSGame
   end
 
   def display_scores
-    puts "Best of #{human.score.max_wins}. Score:"
+    puts "Score: (First to #{Score.max_wins} wins)"
     puts "#{human.name} - #{human.score.wins}."
     puts "#{computer.name} - #{computer.score.wins}"
   end
 
   def calculate_scores
-    if human.move > computer.move
+    if human.move.win?(computer.move)
       human.score.wins += 1
-    elsif human.move < computer.move
+    elsif computer.move.win?(human.move)
       computer.score.wins += 1
     end
   end
@@ -164,14 +195,14 @@ class RPSGame
     if type == 'welcome'
       puts "Welcome to Rock, Paper, Scissors, Lizard, Spock, #{human.name}!"
     elsif type == 'goodbye'
-      puts "Thanks for playing Rock, Paper, Scissors, Lizard, Spock, #{human.name}!"
+      puts "Thanks for playing, #{human.name}!"
     end
   end
 
   def display_winner
-    if human.move > computer.move
+    if human.move.win?(computer.move) # human.move.win?(computer.move)
       puts "#{human.name} won!"
-    elsif human.move < computer.move
+    elsif computer.move.win?(human.move) # computer.move.win?(computer.move)
       puts "#{computer.name} won!"
     else
       puts "It's a tie!"
