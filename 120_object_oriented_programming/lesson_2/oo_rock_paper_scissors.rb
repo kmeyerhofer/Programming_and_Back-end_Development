@@ -100,7 +100,7 @@ class Player
     self.history = PlayHistory.new
   end
 
-  def choice_set(choice)
+  def setting_choice(choice)
     history.add(choice)
     case choice
     when 'rock'
@@ -138,7 +138,7 @@ class Human < Player
       break if Move::VALUES.include?(choice)
       puts "Sorry, invalid choice."
     end
-    choice_set(choice)
+    setting_choice(choice)
   end
 end
 
@@ -149,7 +149,7 @@ class Computer < Player
 
   def choose
     choice = Move::VALUES.sample
-    choice_set(choice)
+    setting_choice(choice)
   end
 end
 
@@ -159,7 +159,7 @@ class R2D2 < Computer # Always chooses rock
   end
 
   def choose
-    choice_set('rock')
+    setting_choice('rock')
   end
 end
 
@@ -170,7 +170,7 @@ class Hal < Computer # Higher probability to choose scissors, never paper
 
   def choose
     choice = ['scissors', 'scissors', 'rock', 'lizard', 'spock'].sample
-    choice_set(choice)
+    setting_choice(choice)
   end
 end
 
