@@ -1,4 +1,3 @@
-require 'pry'
 module Emojiable
   def add_symbol(value)
     case value
@@ -25,11 +24,10 @@ class PlayHistory
 
   def add(choice)
     history.push(choice)
-    binding.pry
   end
 
   def to_s
-    history.map {|word| add_symbol(word)}.join(', ')
+    history.map { |word| add_symbol(word) }.join(', ')
   end
 end
 
@@ -77,23 +75,15 @@ class Spock < Move
 end
 
 class Score
+  MAX_WINS = 3
   attr_accessor :wins
-  @@max_wins = 0
 
   def initialize
     @wins = 0
   end
 
-  def self.start_max_wins(value)
-    @@max_wins = value
-  end
-
-  def self.max_wins
-    @@max_wins
-  end
-
   def win?
-    wins >= @@max_wins
+    wins >= MAX_WINS
   end
 
   def to_s
@@ -108,6 +98,22 @@ class Player
     set_name
     self.score = Score.new
     self.history = PlayHistory.new
+  end
+
+  def choice_set(choice)
+    history.add(choice)
+    case choice
+    when 'rock'
+      self.move = Rock.new(choice)
+    when 'paper'
+      self.move = Paper.new(choice)
+    when 'scissors'
+      self.move = Scissors.new(choice)
+    when 'lizard'
+      self.move = Lizard.new(choice)
+    when 'spock'
+      self.move = Spock.new(choice)
+    end
   end
 end
 
@@ -126,52 +132,45 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      capitalized_selections = Move::VALUES.map { |word| word.capitalize }
+      capitalized_selections = Move::VALUES.map(&:capitalize)
       puts "Please choose: #{capitalized_selections.join(' ')}"
       choice = gets.chomp.downcase
       break if Move::VALUES.include?(choice)
       puts "Sorry, invalid choice."
     end
-    history.add(choice)
-    move_choice(choice)
-  end
-
-  def move_choice(choice)
-    case choice
-    when 'rock'
-      self.move = Rock.new(choice)
-    when 'paper'
-      self.move = Paper.new(choice)
-    when 'scissors'
-      self.move = Scissors.new(choice)
-    when 'lizard'
-      self.move = Lizard.new(choice)
-    when 'spock'
-      self.move = Spock.new(choice)
-    end
+    choice_set(choice)
   end
 end
 
 class Computer < Player
   def set_name
-    self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
+    self.name = ['T-1000', 'GLaDOS', 'C-3PO'].sample
   end
 
   def choose
     choice = Move::VALUES.sample
-    history.add(choice)
-    case choice
-    when 'rock'
-      self.move = Rock.new(choice)
-    when 'paper'
-      self.move = Paper.new(choice)
-    when 'scissors'
-      self.move = Scissors.new(choice)
-    when 'lizard'
-      self.move = Lizard.new(choice)
-    when 'spock'
-      self.move = Spock.new(choice)
-    end
+    choice_set(choice)
+  end
+end
+
+class R2D2 < Computer # Always chooses rock
+  def set_name
+    self.name = 'R2D2'
+  end
+
+  def choose
+    choice_set('rock')
+  end
+end
+
+class Hal < Computer # Higher probability to choose scissors, never paper
+  def set_name
+    self.name = 'Hal'
+  end
+
+  def choose
+    choice = ['scissors', 'scissors', 'rock', 'lizard', 'spock'].sample
+    choice_set(choice)
   end
 end
 
@@ -180,8 +179,7 @@ class RPSGame
 
   def initialize
     @human = Human.new
-    @computer = Computer.new
-    Score.start_max_wins(3)
+    @computer = [R2D2.new, Hal.new, Computer.new].sample
   end
 
   def play_again?
@@ -210,7 +208,6 @@ class RPSGame
 
   def winning_sequence
     clear_screen
-
     display_moves
     display_winner
     display_history
@@ -223,7 +220,7 @@ class RPSGame
   end
 
   def display_scores
-    puts "Score: (First to #{Score.max_wins} wins)" \
+    puts "Score: (First to #{Score::MAX_WINS} wins)" \
          "\t#{human.name} - #{human.score.wins}" \
          "\t#{computer.name} - #{computer.score.wins}\n\n"
   end
