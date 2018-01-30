@@ -1,14 +1,48 @@
 require 'pry'
+module Emojiable
+  def add_symbol(value)
+    case value
+    when 'rock'
+      "#{value.capitalize} \u{1F48E}"
+    when 'paper'
+      "#{value.capitalize} \u{1F4DC}"
+    when 'scissors'
+      "#{value.capitalize} \u{2702}"
+    when 'lizard'
+      "#{value.capitalize} \u{1F98E}"
+    when 'spock'
+      "#{value.capitalize} \u{1f596}"
+    end
+  end
+end
+
+class PlayHistory
+  include Emojiable
+  attr_accessor :history
+  def initialize
+    @history = []
+  end
+
+  def add(choice)
+    history.push(choice)
+    binding.pry
+  end
+
+  def to_s
+    history.map {|word| add_symbol(word)}.join(', ')
+  end
+end
+
 class Move
+  include Emojiable
   attr_accessor :value
   VALUES = %w[rock paper scissors lizard spock]
-
   def initialize(value)
     @value = value if VALUES.include?(value)
   end
 
   def to_s
-    value
+    add_symbol(value)
   end
 end
 
@@ -68,11 +102,12 @@ class Score
 end
 
 class Player
-  attr_accessor :move, :name, :score
+  attr_accessor :move, :name, :score, :history
 
   def initialize
     set_name
     self.score = Score.new
+    self.history = PlayHistory.new
   end
 end
 
@@ -91,11 +126,13 @@ class Human < Player
   def choose
     choice = nil
     loop do
-      puts "Please choose #{Move::VALUES.join(' ')}"
-      choice = gets.chomp
+      capitalized_selections = Move::VALUES.map { |word| word.capitalize }
+      puts "Please choose: #{capitalized_selections.join(' ')}"
+      choice = gets.chomp.downcase
       break if Move::VALUES.include?(choice)
       puts "Sorry, invalid choice."
     end
+    history.add(choice)
     move_choice(choice)
   end
 
@@ -122,6 +159,7 @@ class Computer < Player
 
   def choose
     choice = Move::VALUES.sample
+    history.add(choice)
     case choice
     when 'rock'
       self.move = Rock.new(choice)
@@ -171,16 +209,23 @@ class RPSGame
   end
 
   def winning_sequence
+    clear_screen
+
     display_moves
     display_winner
+    display_history
     calculate_scores
     display_scores
   end
 
+  def clear_screen
+    system('clear') || system('cls')
+  end
+
   def display_scores
-    puts "Score: (First to #{Score.max_wins} wins)"
-    puts "#{human.name} - #{human.score.wins}."
-    puts "#{computer.name} - #{computer.score.wins}"
+    puts "Score: (First to #{Score.max_wins} wins)" \
+         "\t#{human.name} - #{human.score.wins}" \
+         "\t#{computer.name} - #{computer.score.wins}\n\n"
   end
 
   def calculate_scores
@@ -193,25 +238,30 @@ class RPSGame
 
   def display_message(type)
     if type == 'welcome'
-      puts "Welcome to Rock, Paper, Scissors, Lizard, Spock, #{human.name}!"
+      puts "Welcome to Rock, Paper, Scissors, Lizard, Spock, #{human.name}!\n\n"
     elsif type == 'goodbye'
       puts "Thanks for playing, #{human.name}!"
     end
   end
 
   def display_winner
-    if human.move.win?(computer.move) # human.move.win?(computer.move)
-      puts "#{human.name} won!"
-    elsif computer.move.win?(human.move) # computer.move.win?(computer.move)
-      puts "#{computer.name} won!"
+    if human.move.win?(computer.move)
+      puts "#{human.name} won!\n\n"
+    elsif computer.move.win?(human.move)
+      puts "#{computer.name} won!\n\n"
     else
-      puts "It's a tie!"
+      puts "It's a tie!\n\n"
     end
   end
 
   def display_moves
     puts "#{human.name} chose: #{human.move}."
-    puts "#{computer.name} chose: #{computer.move}."
+    puts "#{computer.name} chose: #{computer.move}.\n\n"
+  end
+
+  def display_history
+    puts "#{human.name}'s play history: #{human.history}"
+    puts "#{computer.name}'s play history: #{computer.history}\n\n"
   end
 end
 
