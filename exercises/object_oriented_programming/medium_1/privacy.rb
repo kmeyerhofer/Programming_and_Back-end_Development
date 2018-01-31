@@ -7,6 +7,10 @@ class Machine
     flip_switch(:off)
   end
 
+  def get_switch
+    switch
+  end
+
   private
 
   attr_accessor :switch
