@@ -35,6 +35,7 @@ class Move
   include Emojiable
   attr_accessor :value
   VALUES = %w[rock paper scissors lizard spock]
+  SHORTENED_VALUES = %w[r p sc l sp]
   def initialize(value)
     @value = value if VALUES.include?(value)
   end
@@ -123,7 +124,7 @@ class Human < Player
     loop do
       puts "What's your name?"
       n = gets.chomp
-      break unless n.start_with?(' ') || n.empty?
+      break unless n.length == n.count(' ') || n.empty?
       puts "Sorry, must enter a value."
     end
     self.name = n
@@ -135,10 +136,26 @@ class Human < Player
       capitalized_selections = Move::VALUES.map(&:capitalize)
       puts "Please choose: #{capitalized_selections.join(' ')}"
       choice = gets.chomp.downcase
-      break if Move::VALUES.include?(choice)
+      break if Move::VALUES.include?(choice) ||
+               Move::SHORTENED_VALUES.include?(choice)
       puts "Sorry, invalid choice."
     end
-    setting_choice(choice)
+    choice.length <= 2 ? shortened_to_long(choice) : setting_choice(choice)
+  end
+
+  def shortened_to_long(choice)
+    case choice
+    when 'r'
+      setting_choice('rock')
+    when 'p'
+      setting_choice('paper')
+    when 'sc'
+      setting_choice('scissors')
+    when 'l'
+      setting_choice('lizard')
+    when 'sp'
+      setting_choice('spock')
+    end
   end
 end
 
