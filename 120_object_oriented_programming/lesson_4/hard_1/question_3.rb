@@ -1,20 +1,19 @@
-class Vehicle
+module Movable
   attr_accessor :speed, :heading
   attr_writer :fuel_capacity, :fuel_efficiency
-  def initialize(km_traveled_per_liter, liters_of_fuel_capacity)
-    @fuel_efficiency = km_traveled_per_liter
-    @fuel_capacity = liters_of_fuel_capacity
-  end
 
   def range
     @fuel_efficiency * @fuel_capacity
   end
 end
 
-class WheeledVehicle < Vehicle
+class WheeledVehicle
+  include Movable
+
  def initialize(tire_array, km_traveled_per_liter, liters_of_fuel_capacity)
    @tires = tire_array
-   super(km_traveled_per_liter, liters_of_fuel_capacity)
+   self.fuel_efficiency = km_traveled_per_liter
+   self.fuel_capacity = liters_of_fuel_capacity
  end
 
  def tire_pressure(tire_index)
@@ -40,21 +39,24 @@ class Motorcycle < WheeledVehicle
  end
 end
 
-class FloatingVehicle < Vehicle
-  def range
-    fuel_range = super
-    fuel_range + 10
+class Seacraft
+  include Movable
+  attr_accessor :hull_count, :propeller_count
+
+  def initialize(num_propellers, num_hulls, fuel_efficiency, fuel_capacity)
+    self.num_propellers = num_propellers
+    self.num_hulls = num_hulls
+    self.fuel_efficiency = fuel_efficiency
+    self.fuel_capacity = fuel_capacity
   end
 end
 
-class Catamaran < FloatingVehicle
-  attr_accessor :propeller_count, :hull_count
-  def initialize(num_propellers, num_hulls, km_traveled_per_liter, liters_of_fuel_capacity)
-    @num_propellers = num_propellers
-    @num_hulls = num_hulls
-    super(km_traveled_per_liter, liters_of_fuel_capacity)
+class Motorboat < Seacraft
+  def initialize(km_traveled_per_liter, liters_of_fuel_capacity)
+    super(1, 1, km_traveled_per_liter, liters_of_fuel_capacity)
   end
 end
 
-class Motorboat < FloatingVehicle
+
+class Catamaran < Seacraft
 end
