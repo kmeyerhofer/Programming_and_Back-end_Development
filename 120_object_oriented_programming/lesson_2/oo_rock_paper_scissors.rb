@@ -36,42 +36,19 @@ class Move
   attr_accessor :value
   VALUES = %w[rock paper scissors lizard spock]
   SHORTENED_VALUES = %w[r p sc l sp]
+  WIN_CONDITION = { 'rock' => %w[lizard scissors], 'paper' => %w[rock spock],
+                    'scissors' => %w[paper lizard], 'lizard' => %w[spock paper],
+                    'spock' => %w[scissors rock] }
   def initialize(value)
     @value = value if VALUES.include?(value)
   end
 
+  def win?(other_move)
+    WIN_CONDITION[value].include?(other_move.value)
+  end
+
   def to_s
     add_symbol(value)
-  end
-end
-
-class Rock < Move
-  def win?(other_move)
-    value && (other_move.value == 'lizard' || other_move.value == 'scissors')
-  end
-end
-
-class Paper < Move
-  def win?(other_move)
-    value && (other_move.value == 'rock' || other_move.value == 'spock')
-  end
-end
-
-class Scissors < Move
-  def win?(other_move)
-    value && (other_move.value == 'paper' || other_move.value == 'lizard')
-  end
-end
-
-class Lizard < Move
-  def win?(other_move)
-    value && (other_move.value == 'spock' || other_move.value == 'paper')
-  end
-end
-
-class Spock < Move
-  def win?(other_move)
-    value && (other_move.value == 'scissors' || other_move.value == 'rock')
   end
 end
 
@@ -105,15 +82,15 @@ class Player
     history.add(choice)
     case choice
     when 'rock'
-      self.move = Rock.new(choice)
+      self.move = Move.new(choice)
     when 'paper'
-      self.move = Paper.new(choice)
+      self.move = Move.new(choice)
     when 'scissors'
-      self.move = Scissors.new(choice)
+      self.move = Move.new(choice)
     when 'lizard'
-      self.move = Lizard.new(choice)
+      self.move = Move.new(choice)
     when 'spock'
-      self.move = Spock.new(choice)
+      self.move = Move.new(choice)
     end
   end
 end
