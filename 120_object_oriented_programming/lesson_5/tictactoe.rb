@@ -21,18 +21,6 @@ class Board
     unmarked_keys.empty?
   end
 
-  def someone_won?
-    !!winning_marker
-  end
-
-  def winning_marker
-    WINNING_LINES.each do |line|
-      squares = @squares.values_at(*line)
-      return squares.first.marker if three_identical_markers?(squares)
-    end
-    nil
-  end
-
   def reset
     (1..9).each { |key| @squares[key] = Square.new }
   end
@@ -57,14 +45,48 @@ class Board
       choices = choices.join(delimiter.to_s)
       choices.insert(-2, "#{separator} ")
     elsif choices.count == 2
-      choices.join(' ')
-      choices.insert(-2, separator)
+      choices.insert(-2, separator).join(' ')
     else
       choices.join(' ')
     end
   end
 
+  def select_square(choice_arr)
+    choice_arr.select { |num| unmarked_keys.include?(num) }.sample
+  end
+
+  def ai_available_moves(player_marker)
+    WINNING_LINES.select do |line|
+      squares = @squares.values_at(*line)
+      markers = squares.map(&:marker)
+      two_identical_markers?(markers, player_marker)
+    end
+  end
+
+  def someone_won?
+    !!winning_marker
+  end
+
+  def winning_marker
+    WINNING_LINES.each do |line|
+      squares = @squares.values_at(*line)
+      return squares.first.marker if three_identical_markers?(squares)
+    end
+    nil
+  end
+
   private
+
+  def two_identical_markers?(markers, player_marker)
+    if markers.count(player_marker) != 2 # HUMAN_MARKER for DEFENSE
+      nil
+    elsif markers.count(player_marker) == 2 && # HUMAN_MARKER FOR DEFENSE
+          markers.count(Square::INITIAL_MARKER) == 1 # INITIAL_MARKER
+      true
+    else
+      markers.min == markers.max
+    end
+  end
 
   def three_identical_markers?(squares)
     markers = squares.select(&:marked?).collect(&:marker)
@@ -97,26 +119,39 @@ end
 
 class Player
   attr_reader :marker
-  attr_accessor :score
-  def initialize(marker)
-    @marker = marker
+  attr_accessor :score, :name
+  def initialize(name, marker = nil)
+    @name = name
+    @marker = marker ? marker : marker_choice
     @score = 0
+  end
+
+  def increment_score
+    self.score += 1
+  end
+
+  def marker_choice
+    puts 'Enter a letter as your marker (A-Z):'
+    loop do
+      player_marker = gets.chomp.upcase
+      return player_marker if player_marker.match?(/[a-z]/i) &&
+      player_marker.length == 1
+      puts "Sorry, that's not a valid choice."
+    end
   end
 end
 
 class TTTGame
-  HUMAN_MARKER = 'X'.freeze
   COMPUTER_MARKER = 'O'.freeze
-  FIRST_TO_MOVE = HUMAN_MARKER
   WINS_TO_BEAT_GAME = 5
 
   attr_reader :board, :human, :computer
 
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
-    @current_marker = FIRST_TO_MOVE
+    @human = Player.new(set_name)
+    @computer = Player.new('Roomba', COMPUTER_MARKER)
+    @current_marker = first_to_move
   end
 
   def play
@@ -138,6 +173,20 @@ class TTTGame
 
   private
 
+  def set_name
+    n = ''
+    loop do
+      puts "What's your name?"
+      n = gets.chomp
+      return n unless n.length == n.count(' ') || n.empty?
+      puts 'Sorry, must enter a value.'
+    end
+  end
+
+  def first_to_move
+    @current_marker = human.marker
+  end
+
   def num_of_wins?
     human.score == WINS_TO_BEAT_GAME || computer.score == WINS_TO_BEAT_GAME
   end
@@ -151,22 +200,23 @@ class TTTGame
   end
 
   def display_goodbye_message
-    'Thanks for playing Tic Tac Toe! Goodbye!'
+    "Thanks for playing Tic Tac Toe, #{human.name}! Goodbye!"
   end
 
   def display_board(message = '')
     puts message.to_s
     puts "You are: #{human.marker}. Computer is: #{computer.marker}."
-    puts "Score: You: #{human.score}. Computer: #{computer.score}."
+    puts "Score: #{human.name}: #{human.score}. #{computer.name}:" \
+    "#{computer.score}."
     puts "First to #{WINS_TO_BEAT_GAME} wins, wins the match!"
     puts ''
     board.draw
     puts ''
   end
 
-  def clear_screen_and_display_board
+  def clear_screen_and_display_board(message = '')
     clear
-    display_board
+    display_board(message)
   end
 
   def human_moves
@@ -180,25 +230,44 @@ class TTTGame
     board[square] = human.marker
   end
 
-  def computer_moves
-    board[board.unmarked_keys.sample] = computer.marker
+  def available_offense_moves?
+    !board.ai_available_moves(computer.marker).empty?
   end
 
-  def increment_score(player)
-    player.score += 1
+  def available_defense_moves?
+    !board.ai_available_moves(human.marker).empty?
+  end
+
+  def choices(player_marker)
+    board.ai_available_moves(player_marker).flatten
+  end
+
+  def assign_move(player_marker)
+    board[board.select_square(choices(player_marker))] = computer.marker
+  end
+
+  def ai_moves
+    if available_offense_moves?
+      assign_move(computer.marker)
+    elsif available_defense_moves?
+      assign_move(human.marker)
+    elsif board.unmarked_keys.include?(5)
+      board[5] = computer.marker
+    else
+      board[board.unmarked_keys.sample] = computer.marker
+    end
   end
 
   def display_result
     if board.winning_marker == human.marker
-      increment_score(human)
-      puts 'You won!'
+      human.increment_score
+      clear_screen_and_display_board('You won!')
     elsif board.winning_marker == computer.marker
-      increment_score(computer)
-      puts 'Computer won!'
+      computer.increment_score
+      clear_screen_and_display_board('Computer won!')
     else
-      puts 'Draw!'
+      clear_screen_and_display_board('Draw!')
     end
-    clear_screen_and_display_board
   end
 
   def play_again?
@@ -215,22 +284,22 @@ class TTTGame
   def reset
     board.reset
     clear
-    @current_marker = FIRST_TO_MOVE
+    @current_marker = first_to_move
     display_board("Let's play again!")
   end
 
   def current_player_moves
     if human_turn?
       human_moves
-      @current_marker = COMPUTER_MARKER
+      @current_marker = computer.marker
     else
-      computer_moves
-      @current_marker = HUMAN_MARKER
+      ai_moves
+      @current_marker = human.marker
     end
   end
 
   def human_turn?
-    @current_marker == HUMAN_MARKER
+    @current_marker == human.marker
   end
 end
 
