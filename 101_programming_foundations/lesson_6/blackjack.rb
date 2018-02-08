@@ -202,7 +202,7 @@ loop do
   elsif !blackjack_check?(player_total) && !blackjack_check?(dealer_total)
     player_turn(deck, player_hand, dealer_hand, wins)
   end
-  prompt('Score (Best of 5)')
+  prompt('Score (First to 5 wins)')
   prompt("Player: #{wins[0]}.")
   prompt("Dealer: #{wins[1]}.")
   break if wins[0] == 5 || wins[1] == 5
