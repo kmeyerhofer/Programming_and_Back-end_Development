@@ -135,7 +135,7 @@ class Player
     loop do
       player_marker = gets.chomp.upcase
       return player_marker if player_marker.match?(/[a-z]/i) &&
-      player_marker.length == 1
+                              player_marker.length == 1
       puts "Sorry, that's not a valid choice."
     end
   end
@@ -275,7 +275,7 @@ class TTTGame
     loop do
       puts 'Would you like to play again? (y/n)'
       answer = gets.chomp.downcase
-      break if %w(y n).include? answer
+      break if %w[y n].include? answer
       puts 'Sorry, must be y or n'
     end
     answer == 'y'
