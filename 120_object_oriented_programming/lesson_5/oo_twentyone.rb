@@ -110,7 +110,7 @@ module Hand
 
   def hand_pre_join
     cards.map do |card|
-      "#{card.name} of #{card.suit.capitalize} #{Card::SUITS[card.suit]}"
+      "#{card.name} of #{Card::SUITS[card.suit]}"
     end
   end
 
@@ -145,15 +145,6 @@ class Player
     @art_array = []
   end
 
-  def aces
-    cards.find { |card| card.value == 11 }
-  end
-
-  def card_value_reset
-    sum = 0
-    cards.count.times { |index| sum += cards[index].value }
-    sum
-  end
 
   def total_card_value=(value)
     if card_value_reset > 21 && !aces.nil?
@@ -162,6 +153,18 @@ class Player
     else
       @total_card_value = value
     end
+  end
+
+  private
+
+  def aces
+    cards.find { |card| card.value == 11 }
+  end
+
+  def card_value_reset
+    sum = 0
+    cards.count.times { |index| sum += cards[index].value }
+    sum
   end
 end
 
