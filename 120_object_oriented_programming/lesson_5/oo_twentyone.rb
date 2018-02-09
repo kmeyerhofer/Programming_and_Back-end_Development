@@ -1,7 +1,7 @@
 module CardTable
   MAX_WINS = 10
   def welcome_message
-    puts "Welcome to the card game Blackjack!"
+    puts "Welcome to the card game, Blackjack! Please, have a seat."
   end
 
   def show_initial_cards
@@ -97,7 +97,6 @@ module CardTable
   end
 
   def win_message(player, losing_player = '', message ='')
-    puts "\nFinal board state:\n"
     message == 'busted' && player == dealer ? show_initial_cards : display_cards
     puts "#{player.name} wins!"
     puts "#{losing_player.name} #{message}!" unless message.empty?
@@ -323,10 +322,11 @@ class Game
   def human_name_set
     name = ''
     loop do
-      puts "Please enter your name."
+      puts "What's your name?"
       name = gets.chomp
       return name unless name.length == name.count(' ') || name.empty?
-      puts 'Sorry, must enter a value.'
+      puts "That doesn't sound like a name I've ever heard of." \
+      ' Tell me one more time.'
     end
   end
 
