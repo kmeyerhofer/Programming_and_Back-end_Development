@@ -40,23 +40,32 @@ end
 
 class Player
   include Hand
-  attr_accessor :total_card_value, :name # change attr_reader for :total_card_value to count cards each time. If an Ace is present, change value as necessary
+  attr_reader :total_card_value
+  attr_accessor :name
   def initialize(name)
     @name = name
     @cards = []
     @total_card_value = 0
   end
 
-  # def hit(deck)
-  #   deck.deal!(self, 1)
-  # end
+  def aces
+    cards.find { |card| card.value == 11 }
+  end
 
-  def stay; end
+  def card_value_reset
+    sum = 0
+    cards.count.times { |index| sum += cards[index].value }
+    sum
+  end
 
-  # def total
-  #   cards.each { |card| self.card_total += card.value }
-  #   card_total
-  # end
+  def total_card_value=(value)
+    if card_value_reset > 21 && !aces.nil?
+      aces.value = 1
+      @total_card_value = card_value_reset
+    else
+      @total_card_value = value
+    end
+  end
 end
 
 class Dealer < Player
@@ -75,8 +84,9 @@ class Deck
   def deal!(player, num)
     num.times do
       rand_card = random_card
-      player.total_card_value += rand_card.value
       player.cards.push(deck.delete(rand_card))
+      # player.cards.push(Card.new('spades', 'Ace', 11))
+      player.total_card_value += rand_card.value
     end
   end
 
@@ -101,7 +111,8 @@ class Deck
 end
 
 class Card
-  attr_reader :suit, :name, :value
+  attr_reader :suit, :name
+  attr_accessor :value
   def initialize(suit, name, value)
     @suit = suit
     @name = name
@@ -155,11 +166,13 @@ class Game
   end
 
   def calculate_result
-    if human.total_card_value < dealer.total_card_value
+    h_t = human.total_card_value
+    d_t = dealer.total_card_value
+    if h_t < d_t
       win_message(dealer)
-    elsif human.total_card_value > dealer.total_card_value
+    elsif h_t > d_t
       win_message(human)
-    elsif human.total_card_value == dealer.total_card_value
+    elsif h_t == d_t
       push
     end
   end
