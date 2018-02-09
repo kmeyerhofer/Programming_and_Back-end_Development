@@ -40,7 +40,7 @@ end
 
 class Player
   include Hand
-  attr_accessor :total_card_value, :name
+  attr_accessor :total_card_value, :name # change attr_reader for :total_card_value to count cards each time. If an Ace is present, change value as necessary
   def initialize(name)
     @name = name
     @cards = []
@@ -119,65 +119,58 @@ class Game
   end
 
   def start
-    loop do
-      # if blackjack_check?(player_total) && blackjack_check?(dealer_total)
-      #   update_board(player_hand, dealer_hand, 'Push', '')
-      # elsif blackjack_check?(player_total) && !blackjack_check?(dealer_total)
-      #   dealer_turn(deck, player_hand, dealer_hand, wins)
-      # elsif !blackjack_check?(player_total) && blackjack_check?(dealer_total)
-      #   update_board(player_hand, dealer_hand, '', 'Dealer', wins)
-      # elsif !blackjack_check?(player_total) && !blackjack_check?(dealer_total)
-      #   player_turn(deck, player_hand, dealer_hand, wins)
-      # end
+    deal_cards
+    show_initial_cards
+    blackjack? ? dealt_card_check : human_turn
+  end
 
-      deal_cards
-      show_initial_cards
-      first_card_branch
-
-      # break if card_value_check?
-      # human_turn
-      # break if card_value_check?
-
+  def dealt_card_check
+    if dealer.blackjack? && human.blackjack?
+      push
+    elsif dealer.blackjack?
+      win_message(dealer)
+    elsif human.blackjack?
       dealer_turn
-      # break if card_value_check?
-      show_result
-      break
     end
   end
 
-  def first_card_branch
-    h_b = human.blackjack?
-    d_b = dealer.blackjack?
-    if h_b && d_b
-      push
-    elsif h_b && !d_b
+  def human_hit_card_check
+    if human.blackjack?
       dealer_turn
-    elsif !h_b && d_b
-      win(dealer)
-    elsif !h_b && !d_b
+    elsif human.busted?
+      win_message(dealer, human, 'busted')
+    else
       human_turn
     end
   end
 
-  def show_result
-    display_cards
-    win_check
+  def dealer_hit_card_check
+    if dealer.blackjack?
+      calculate_result
+    elsif dealer.busted?
+      win_message(human, dealer, 'busted')
+    else
+      dealer_turn
+    end
   end
 
-  def win_check
-    h_t = human.total_card_value
-    d_t = dealer.total_card_value
-    if !human.busted? && h_t > d_t || dealer.busted?
-      win(human)
-    elsif !dealer.busted? && d_t > h_t || human.busted?
-      win(dealer)
-    else
+  def calculate_result
+    if human.total_card_value < dealer.total_card_value
+      win_message(dealer)
+    elsif human.total_card_value > dealer.total_card_value
+      win_message(human)
+    elsif human.total_card_value == dealer.total_card_value
       push
     end
   end
 
   def dealer_turn
-    deck.deal!(dealer, 1) if dealer.total_card_value < 17
+    if dealer.total_card_value < 17
+      deck.deal!(dealer, 1)
+      dealer_hit_card_check
+    elsif dealer.total_card_value >= 17
+      calculate_result
+    end
   end
 
   def human_turn
@@ -188,50 +181,28 @@ class Game
       break if selection == 'hit' || selection == 'stay'
       puts "Invalid selection. 'Hit' or 'Stay'?"
     end
-    if selection == 'hit'
+    case selection
+    when 'hit'
       deck.deal!(human, 1)
       show_initial_cards
-      return if card_value_check?
-      human_turn
+      human_hit_card_check
+    when 'stay'
+      dealer_turn
     end
-    # human_turn if selection == 'hit'
   end
 
   def show_initial_cards
     puts human.hand
-    puts dealer.initial_hand
+    puts dealer.initial_hand + "\n\n"
   end
 
   def display_cards
     puts human.hand
-    puts dealer.hand
+    puts dealer.hand + "\n\n"
   end
 
-  def bust_check
-    h_t = human.busted?
-    d_t = dealer.busted?
-    if h_t
-      # win(dealer)
-      true
-    elsif d_t
-      # win(human)
-      true
-    end
-  end
-
-  def blackjack_check
-    h_t = human.blackjack?
-    d_t = dealer.blackjack?
-    if h_t && d_t
-      # push
-      true
-    elsif h_t
-      # win(human)
-      true
-    elsif d_t
-      # win(dealer)
-      true
-    end
+  def blackjack?
+    human.blackjack? || dealer.blackjack?
   end
 
   def push
@@ -239,21 +210,16 @@ class Game
     puts "Push, tie, no one wins."
   end
 
-  def win(player)
+  def win_message(player, losing_player = '', message ='')
     display_cards
     puts "#{player.name} wins!"
+    puts "#{losing_player.name} #{message}!" unless message.empty?
   end
 
   def deal_cards
     deck.deal!(human, 2)
     deck.deal!(dealer, 2)
   end
-
-  def card_value_check?
-    blackjack_check || bust_check
-  end
 end
 
 Game.new.start
-
-# p game.deck
