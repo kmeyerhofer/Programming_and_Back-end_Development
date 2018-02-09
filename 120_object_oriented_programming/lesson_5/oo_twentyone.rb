@@ -68,12 +68,6 @@ class Player
   end
 end
 
-class Dealer < Player
-  def hit; end
-
-  def stay; end
-end
-
 class Deck
   include Emojiable
   attr_accessor :cards, :deck
@@ -85,7 +79,6 @@ class Deck
     num.times do
       rand_card = random_card
       player.cards.push(deck.delete(rand_card))
-      # player.cards.push(Card.new('spades', 'Ace', 11))
       player.total_card_value += rand_card.value
     end
   end
@@ -122,11 +115,10 @@ end
 
 class Game
   attr_reader :deck, :human, :dealer
-
   def initialize
     @deck = Deck.new
     @human = Player.new('Player')
-    @dealer = Dealer.new('Dealer')
+    @dealer = Player.new('Dealer')
   end
 
   def start
