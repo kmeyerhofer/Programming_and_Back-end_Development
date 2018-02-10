@@ -1,10 +1,13 @@
 module CardTable
-  MAX_WINS = 10
   def welcome_message
     puts "Welcome to the card game, Blackjack! Please, have a seat."
   end
 
-  def show_initial_cards
+  def goodbye_message
+    puts "Thanks for playing Blackjack. Come back soon."
+  end
+
+  def display_initial_cards
     display_board_core
     puts dealer_overturned_card
     puts dealer.initial_hand + "\n\n"
@@ -12,8 +15,8 @@ module CardTable
 
   def display_board_core
     clear
-    puts "Score: #{human.name} - #{human.wins}. #{dealer.name}" \
-    " - #{dealer.wins} (First to #{MAX_WINS} wins)\n#{human.name}'s cards:"
+    puts "Score: #{human.name} - #{human.wins}. #{dealer.name} - " \
+    "#{dealer.wins} (First to #{Game::MAX_WINS} wins)\n#{human.name}'s cards:"
     display_human_card_art
     puts "#{human.hand}\n#{dealer.name}'s cards:"
   end
@@ -25,7 +28,7 @@ module CardTable
   end
 
   def clear
-    system 'clear'
+    system('clear') || system('cls')
   end
 
   def display_human_card_art
@@ -90,23 +93,23 @@ module CardTable
     "|________|"
   end
 
-  def push
+  def display_tie
     display_cards
-    puts 'Push, tie, no one wins.'
-    reset if play_again?
+    puts 'Tie, no one wins.'
   end
 
-  def win_message(player, losing_player = '', message ='')
-    message == 'busted' && player == dealer ? show_initial_cards : display_cards
+  def display_winner(player, loser, message)
+    if message == 'busted' && loser == human
+      display_initial_cards
+    else
+      display_cards
+    end
+    puts "#{loser.name} #{message}!" unless message.empty?
     puts "#{player.name} wins!"
-    puts "#{losing_player.name} #{message}!" unless message.empty?
-    reset if !max_wins? && play_again?
   end
 end
 
 module Hand
-  attr_accessor :cards
-
   def hand_pre_join
     cards.map do |card|
       "#{card.name} of #{Card::SUITS[card.suit]}"
@@ -135,7 +138,7 @@ end
 class Player
   include Hand
   attr_reader :total_card_value, :name
-  attr_accessor :wins, :art_array
+  attr_accessor :wins, :art_array, :cards
   def initialize(name)
     @name = name
     @cards = []
@@ -144,7 +147,6 @@ class Player
     @art_array = []
   end
 
-
   def total_card_value=(value)
     if card_value_reset > 21 && !aces.nil?
       aces.value = 1
@@ -152,6 +154,12 @@ class Player
     else
       @total_card_value = value
     end
+  end
+
+  def reset
+    self.cards = []
+    self.total_card_value = 0
+    self.art_array = []
   end
 
   private
@@ -215,9 +223,9 @@ class Card
 end
 
 class Game
+  MAX_WINS = 10
   include CardTable
-  attr_reader :human, :dealer
-  attr_accessor :deck
+  attr_accessor :deck, :human, :dealer
   def initialize
     welcome_message
     @deck = Deck.new
@@ -227,7 +235,7 @@ class Game
 
   def start
     deal_cards
-    show_initial_cards
+    display_initial_cards
     blackjack? ? dealt_card_check : human_turn
   end
 
@@ -240,10 +248,10 @@ class Game
 
   def dealt_card_check
     if dealer.blackjack? && human.blackjack?
-      push
+      end_of_round_check('tie')
     elsif dealer.blackjack?
       increment_wins(dealer)
-      win_message(dealer)
+      end_of_round_check(dealer)
     elsif human.blackjack?
       dealer_turn
     end
@@ -254,7 +262,7 @@ class Game
       dealer_turn
     elsif human.busted?
       increment_wins(dealer)
-      win_message(dealer, human, 'busted')
+      end_of_round_check(dealer, 'busted')
     else
       human_turn
     end
@@ -265,7 +273,7 @@ class Game
       calculate_result
     elsif dealer.busted?
       increment_wins(human)
-      win_message(human, dealer, 'busted')
+      end_of_round_check(human, 'busted')
     else
       dealer_turn
     end
@@ -274,6 +282,7 @@ class Game
   def dealer_turn
     if dealer.total_card_value < 17
       deck.deal!(dealer, 1)
+      display_cards
       dealer_hit_card_check
     elsif dealer.total_card_value >= 17
       calculate_result
@@ -283,14 +292,14 @@ class Game
   def human_turn
     selection = ''
     loop do
-      puts "'(h)it' or '(s)tay'?"
+      puts "(h)it or (s)tay?"
       selection = gets.chomp.downcase
-      break if validate_input(selection)
-      puts "Invalid entry. '(h)it' or '(s)tay'?"
+      break if validate_hit_or_stay?(selection)
+      puts "Invalid entry. (h)it or (s)tay?"
     end
     if selection == 'hit' || selection == 'h'
       deck.deal!(human, 1)
-      show_initial_cards
+      display_initial_cards
       human_hit_card_check
     elsif selection == 'stay' || selection == 's'
       dealer_turn
@@ -298,20 +307,31 @@ class Game
   end
 
   def calculate_result
-    h_t = human.total_card_value
-    d_t = dealer.total_card_value
-    if h_t < d_t
+    human_total = human.total_card_value
+    dealer_total = dealer.total_card_value
+    if human_total < dealer_total
       increment_wins(dealer)
-      win_message(dealer)
-    elsif h_t > d_t
+      end_of_round_check(dealer)
+    elsif human_total > dealer_total
       increment_wins(human)
-      win_message(human)
-    elsif h_t == d_t
-      push
+      end_of_round_check(human)
+    elsif human_total == dealer_total
+      end_of_round_check('tie')
     end
   end
 
-  def validate_input(input)
+  def end_of_round_check(winner, message = '')
+    if winner == human
+      display_winner(winner, dealer, message)
+    elsif winner == dealer
+      display_winner(winner, human, message)
+    elsif winner == 'tie'
+      display_tie
+    end
+    !max_wins? && play_again? ? reset : goodbye_message
+  end
+
+  def validate_hit_or_stay?(input)
     input == 's' || input == 'h' || input == 'hit' || input == 'stay'
   end
 
@@ -341,22 +361,22 @@ class Game
   def play_again?
     answer = ''
     loop do
-      puts 'Would you like to play again? (y/n)'
+      puts 'Would you like to play again? (y)es or (n)o?'
       answer = gets.chomp.downcase
-      break if answer.start_with?('y', 'n')
-      puts 'Sorry, must be y or n'
+      break if validate_yes_or_no?(answer)
+      puts 'Invalid entry. (y)es or (n)o?'
     end
     answer.start_with?('y')
   end
 
+  def validate_yes_or_no?(input)
+    input == 'y' || input == 'n' || input == 'yes' || input == 'no'
+  end
+
   def reset
     self.deck = Deck.new
-    human.cards = []
-    dealer.cards = []
-    human.total_card_value = 0
-    dealer.total_card_value = 0
-    human.art_array = []
-    dealer.art_array = []
+    human.reset
+    dealer.reset
     start
   end
 end
