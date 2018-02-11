@@ -1,10 +1,12 @@
 module CardTable
-  def welcome_message
-    puts "Welcome to the card game, Blackjack! Please, have a seat."
+  def display_welcome_and_rules
+    puts "Welcome to the card game, Blackjack! Please, have a seat.\n\n"
+    puts "The goal of Twenty-One is to try to get as close to 21 as possible" \
+    ", without going over. If you go over 21, it's a 'bust' and you lose.\n\n"
   end
 
-  def goodbye_message
-    puts "Thanks for playing Blackjack. Come back soon."
+  def display_goodbye_message(message)
+    puts "#{message} Thanks for playing Blackjack. Come back soon."
   end
 
   def display_initial_cards
@@ -116,14 +118,8 @@ module Hand
     end
   end
 
-  def initial_hand
-    card_array = hand_pre_join
-    card_array[1] = 'and an overturned card.'
-    card_array.join(', ')
-  end
-
   def hand
-    "#{hand_pre_join.join(', ')}\n(Card Total: #{@total_card_value})"
+    "#{hand_pre_join.join(', ')}\n(Card Total: #{total_card_value})"
   end
 
   def busted?
@@ -172,6 +168,34 @@ class Player
     sum = 0
     cards.count.times { |index| sum += cards[index].value }
     sum
+  end
+end
+
+class Dealer < Player
+  attr_accessor :hits
+  def initialize(name)
+    @hits = 0
+    super
+  end
+
+  def reset
+    self.hits = 0
+    super
+  end
+
+  def dealer_rule_text
+    "\n#{name} will hit until their card value is greater than or equal to 17."
+  end
+
+  def initial_hand
+    card_array = hand_pre_join
+    card_array[1] = 'and an overturned card.'
+    "#{card_array.join(', ')}#{dealer_rule_text}"
+  end
+
+  def hand
+    "#{hand_pre_join.join(', ')}\n(Card Total: #{total_card_value})" \
+    "#{dealer_rule_text}\n#{name} hit #{hits} time#{'s' if hits != 1}."
   end
 end
 
@@ -227,10 +251,10 @@ class Game
   include CardTable
   attr_accessor :deck, :human, :dealer
   def initialize
-    welcome_message
+    display_welcome_and_rules
     @deck = Deck.new
     @human = Player.new(human_name_set)
-    @dealer = Player.new('Dealer')
+    @dealer = Dealer.new('Dealer')
   end
 
   def start
@@ -282,7 +306,7 @@ class Game
   def dealer_turn
     if dealer.total_card_value < 17
       deck.deal!(dealer, 1)
-      display_cards
+      dealer.hits += 1
       dealer_hit_card_check
     elsif dealer.total_card_value >= 17
       calculate_result
@@ -328,7 +352,29 @@ class Game
     elsif winner == 'tie'
       display_tie
     end
-    !max_wins? && play_again? ? reset : goodbye_message
+    !max_wins? && play_again? ? reset : calculate_goodbye_message
+  end
+
+  def calculate_goodbye_message
+    if compare_wins(human, dealer, true)
+      display_goodbye_message('Great job!')
+    elsif compare_wins(human, dealer, false)
+      display_goodbye_message("Quitting while you're ahead, smart move.")
+    elsif compare_wins(dealer, human, true)
+      display_goodbye_message('Better luck next time.')
+    elsif compare_wins(dealer, human, false)
+      display_goodbye_message("Luck doesn't seem to be on your side today.")
+    else
+      display_goodbye_message('Even stevens.')
+    end
+  end
+
+  def compare_wins(player_one, player_two, max_wins)
+    if max_wins
+      player_one.wins > player_two.wins && max_wins?
+    else
+      player_one.wins > player_two.wins && !max_wins?
+    end
   end
 
   def validate_hit_or_stay?(input)
