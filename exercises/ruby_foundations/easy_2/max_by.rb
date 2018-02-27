@@ -1,13 +1,16 @@
 def max_by(array)
   return nil if array.empty?
-  index = 0
-  largest_element = array.first
-  previous_value = yield(array[index])
+  index = 1
+  largest_element = yield(array.first)
+  largest_index = 0
   while index < array.size
-    largest_element =  if yield(array[index]) > previous_value
+    if yield(array[index]) > largest_element
+      largest_element = yield(array[index])
+      largest_index = index
+    end
     index += 1
   end
-  largest_element
+  array[largest_index]
 end
 
 p max_by([1, 5, 3]) { |value| value + 2 } == 5
