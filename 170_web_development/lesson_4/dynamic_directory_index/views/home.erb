@@ -1,0 +1,13 @@
+<html>
+  <body>
+    <h1>File List</h1>
+    <ul>
+    <%@files.each do |file|%>
+      <li><a href="/<%=file%>"><%=file%></a></li>
+    <%end%>
+    </ul>
+
+
+    <a href="<%= sort_link %>">Sort <%= @link %></a>
+  </body>
+</html>
