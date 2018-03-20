@@ -1,0 +1,12 @@
+<h3><%= @current_user %></h3>
+<h4>Email address:</h4>
+<p><%= @yml_data[@current_user][:email] %></p>
+<h4>Interests:</h4>
+<p><%= interests_format(@current_user) %></p>
+
+<br><br>
+Other users:
+
+<% @other_users.each do |user| %>
+  <a href="/user/<%= user %>"><%= "#{user.to_s}" %></a>
+<% end %>

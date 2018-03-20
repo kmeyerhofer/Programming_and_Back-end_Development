@@ -1,0 +1,5 @@
+<ul>
+  <% @user_strings.each do |user| %>
+    <li><a href="/user/<%= user %>"><%= "#{user.to_s}" %></a></li>
+  <% end %>
+</ul>
