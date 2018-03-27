@@ -10,7 +10,7 @@ end
 
 helpers do
   def only_files_with_names(&block)
-    files = Dir.new('data/')
+    files = Dir.new(data_path)
     files.each { |file| yield file unless file == '.' || file == '..' }
   end
 end
@@ -32,6 +32,18 @@ end
 
 get '/' do
   erb :docs, layout: :layout
+end
+
+post '/:file_name/delete' do
+  filename = params[:file_name].to_s
+  if File.exist?(file(filename))
+    File.delete(file(filename))
+    session[:message] = "#{filename} was deleted."
+    redirect '/'
+  else
+    session[:message] = 'File does not exist.'
+    redirect '/'
+  end
 end
 
 def data_path
@@ -87,5 +99,27 @@ post '/:file_name/edit' do
   file_text = params[:new_text]
   File.write(file(params[:file_name]), file_text)
   session[:message] = "#{params[:file_name]} has been updated."
+  redirect '/'
+end
+
+get '/users/signin' do
+  erb :signin
+end
+
+post '/users/signin' do
+  if params[:username] == 'admin' && params[:password] == 'secret'
+    session[:username] = params[:username]
+    session[:message] = 'Welcome!'
+    redirect '/'
+  else
+    session[:message] = 'Invalid credentials'
+    status 422
+    erb :signin
+  end
+end
+
+post '/users/signout' do
+  session.delete(:username)
+  session[:message] = 'You have been signed out.'
   redirect '/'
 end

@@ -18,8 +18,8 @@ class CMSTest < Minitest::Test
   end
 
   def create_document(name, content = '')
-    File.open(File.join(data_path, name), "w") do |file|
-      file.write(content)
+    File.open(File.join(data_path, name), "w") do |new_file|
+      new_file.write(content)
     end
   end
 
@@ -28,8 +28,8 @@ class CMSTest < Minitest::Test
   end
 
   def test_content_management
-    create_document 'about.md'
-    create_document 'changes.txt'
+    create_document 'about.md', 'about text information'
+    create_document 'changes.txt', 'about change text info'
 
     get '/'
     assert_equal 200, last_response.status
@@ -112,5 +112,48 @@ class CMSTest < Minitest::Test
     post '/new', new_document: 'test'
     assert_equal 422, last_response.status
     assert_includes last_response.body, "test is an incorrect file name."
+  end
+
+  def test_deleting_document
+    create_document('test.txt')
+    post "/test.txt/delete"
+    assert_equal 302, last_response.status
+
+    get last_response["Location"]
+    assert_includes last_response.body, "test.txt was deleted."
+
+    get '/'
+    refute_includes last_response.body, 'test.txt'
+  end
+
+  def test_signin_form
+    get '/users/signin'
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<input"
+    assert_includes last_response.body, %q(<button type='submit')
+  end
+
+  def test_signin
+    post '/users/signin', username: 'admin', password: 'secret'
+    assert_equal 302, last_response.status
+    get last_response['Location']
+    assert_includes last_response.body, 'Welcome'
+    assert_includes last_response.body, 'Signed in as admin'
+  end
+
+  def test_signin_with_bad_credentials
+    post 'users/signin', username: 'guest', password: 'sshhhh'
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'Invalid credentials'
+  end
+
+  def test_signout
+    post '/users/signin', username: 'admin', password: 'secret'
+    get last_response['Location']
+    assert_includes last_response.body, 'Welcome'
+    post '/users/signout'
+    get last_response['Location']
+    assert_includes last_response.body, 'You have been signed out'
+    assert_includes last_response.body, 'Sign In'
   end
 end
