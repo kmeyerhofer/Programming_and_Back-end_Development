@@ -1,5 +1,12 @@
+<% if session[:message] %>
+  <p><%= session.delete(:message) %></p>
+<% end %>
+
 <ul>
 <% only_files_with_names do |file| %>
-  <li><a href="/<%= file %>"><%= file %></a></li>
+  <li>
+    <a href="/<%= file %>"><%= file %></a>
+    <a href="/<%= file %>/edit">Edit</a>
+  </li>
 <% end %>
 </ul>

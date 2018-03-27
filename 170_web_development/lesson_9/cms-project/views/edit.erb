@@ -1,0 +1,19 @@
+<h3>Edit content of <%= params[:file_name] %>:</h3>
+
+
+<form action="/<%= params[:file_name] %>/edit" method="post">
+    <div>
+      <textarea name='new_text' rows='20' cols='100'><%= @contents %></textarea>
+    </div>
+  <fieldset>
+    <input type="submit" value="Save Changes">
+    <a href="/">Cancel</a>
+  </fieldset>
+</form>
+
+<!--
+
+<form action="/<%= params[:file_name]%>/edit" method="post">
+  <button type="submit" >Save Changes</button>
+</form>
+This is the edit page. -->
