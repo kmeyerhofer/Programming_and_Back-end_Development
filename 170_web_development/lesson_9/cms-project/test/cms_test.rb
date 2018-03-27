@@ -103,13 +103,13 @@ class CMSTest < Minitest::Test
   end
 
   def test_create_invalid_document_empty
-    post '/new', filename: ''
+    post '/new', new_document: ''
     assert_equal 422, last_response.status
     assert_includes last_response.body, "Document name is empty, please enter a file name."
   end
 
   def test_create_invalid_document_no_file_ending
-    post '/new', filename: 'test'
+    post '/new', new_document: 'test'
     assert_equal 422, last_response.status
     assert_includes last_response.body, "test is an incorrect file name."
   end

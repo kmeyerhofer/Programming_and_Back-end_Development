@@ -51,17 +51,19 @@ get '/new' do
 end
 
 post '/new' do
-  filename = params[:new_document]
-  if filename.nil?
+  filename = params[:new_document].to_s.strip
+  if filename.size == 0
     session[:message] = "Document name is empty, please enter a file name."
-    redirect '/new'
+    status 422
+    erb :new
   elsif filename.match?(/\w+[.]\w+/)
-    new_file = File.new(file(filename.strip), File::CREAT)
+    new_file = File.new(file(filename), File::CREAT)
     session[:message] = "#{filename} has been created."
     redirect '/'
   else
     session[:message] = "#{filename} is an incorrect file name."
-    redirect '/new'
+    status 422
+    erb :new
   end
 end
 
