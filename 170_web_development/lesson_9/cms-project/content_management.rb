@@ -22,17 +22,16 @@ end
 
 def load_file_content(path)
   content = File.read(path)
-  case File.extname(path)
-  when '.txt'
+  if File.extname(path) == '.md'
+    erb render_markdown(content)
+  else
     headers['Content-Type'] = 'text/plain'
     content
-  when '.md'
-    render_markdown(content)
   end
 end
 
 get '/' do
-  erb :docs
+  erb :docs, layout: :layout
 end
 
 def data_path
@@ -45,6 +44,25 @@ end
 
 def file(name)
   File.join(data_path, name)
+end
+
+get '/new' do
+  erb :new
+end
+
+post '/new' do
+  filename = params[:new_document]
+  if filename.nil?
+    session[:message] = "Document name is empty, please enter a file name."
+    redirect '/new'
+  elsif filename.match?(/\w+[.]\w+/)
+    new_file = File.new(file(filename.strip), File::CREAT)
+    session[:message] = "#{filename} has been created."
+    redirect '/'
+  else
+    session[:message] = "#{filename} is an incorrect file name."
+    redirect '/new'
+  end
 end
 
 get '/:file_name' do

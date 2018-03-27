@@ -84,4 +84,33 @@ class CMSTest < Minitest::Test
     assert_equal 200, last_response.status
     assert_includes last_response.body, "new content, test edited"
   end
+
+  def test_new_document_page
+    create_document 'test1.txt', 'here is the test text'
+    get '/new'
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, '<input'
+    assert_includes last_response.body, "Enter a new document name:</label>"
+  end
+
+  def test_creation_of_new_document
+    post '/new', new_document: 'new_file.txt'
+    assert_equal 302, last_response.status
+
+    get '/'
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "new_file.txt"
+  end
+
+  def test_create_invalid_document_empty
+    post '/new', filename: ''
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, "Document name is empty, please enter a file name."
+  end
+
+  def test_create_invalid_document_no_file_ending
+    post '/new', filename: 'test'
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, "test is an incorrect file name."
+  end
 end

@@ -1,7 +1,4 @@
-#Ruby is...
-
-#a dynamic language
-
+#Ruby is...a dynamic language, cool!
 ##cool!
 
 * what
@@ -9,3 +6,4 @@
 * we
 * do with
 * *s?
+(so many links)[nolink]sfdfsafd
